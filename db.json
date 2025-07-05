@@ -1,0 +1,153 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "Administrador",
+      "email": "admin@rental.com",
+      "password": "admin123",
+      "role": "admin"
+    },
+    {
+      "id": "2",
+      "name": "Atendente",
+      "email": "atendente@rental.com",
+      "password": "atendente123",
+      "role": "attendant"
+    }
+  ],
+  "clothes": [
+    {
+      "id": "1",
+      "name": "Vestido de Festa Azul",
+      "type": "vestido",
+      "size": "M",
+      "color": "Azul",
+      "status": "available",
+      "price": 150,
+      "notes": "Vestido elegante para festas",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "name": "Terno Preto Clássico",
+      "type": "terno",
+      "size": "G",
+      "color": "Preto",
+      "status": "rented",
+      "price": 200,
+      "notes": "Terno social completo",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-15T14:30:00Z"
+    },
+    {
+      "id": "3",
+      "name": "Fantasia de Princesa",
+      "type": "fantasia",
+      "size": "P",
+      "color": "Rosa",
+      "status": "available",
+      "price": 100,
+      "notes": "Fantasia infantil completa",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2025-07-05T22:33:59.775Z"
+    },
+    {
+      "id": "4",
+      "name": "Vestido de Noiva Clássico",
+      "type": "vestido-noiva",
+      "size": "M",
+      "color": "Branco",
+      "status": "available",
+      "price": 500,
+      "notes": "Vestido de noiva com cauda",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z"
+    }
+  ],
+  "customers": [
+    {
+      "id": "1",
+      "name": "Maria Silva",
+      "cpf": "123.456.789-00",
+      "phone": "(11) 99999-9999",
+      "email": "maria@email.com",
+      "address": "Rua das Flores, 123, Centro, São Paulo - SP",
+      "notes": "Cliente VIP, sempre pontual",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "name": "João Santos",
+      "cpf": "987.654.321-00",
+      "phone": "(11) 88888-8888",
+      "email": "joao@email.com",
+      "address": "Av. Principal, 456, Jardins, São Paulo - SP",
+      "notes": "Prefere roupas escuras",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z"
+    },
+    {
+      "id": "3",
+      "name": "Ana Costa",
+      "cpf": "456.789.123-00",
+      "phone": "(11) 77777-7777",
+      "email": "ana@email.com",
+      "address": "Rua das Palmeiras, 789, Vila Madalena, São Paulo - SP",
+      "notes": "Aluga frequentemente para eventos corporativos",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z"
+    }
+  ],
+  "rentals": [
+    {
+      "id": "1",
+      "customerId": "1",
+      "clothingIds": [
+        "2"
+      ],
+      "rentDate": "2024-01-15",
+      "returnDate": "2024-01-20",
+      "actualReturnDate": null,
+      "totalValue": 200,
+      "status": "active",
+      "fine": 0,
+      "notes": "Aluguel para casamento",
+      "createdAt": "2024-01-15T09:00:00Z",
+      "updatedAt": "2024-01-15T09:00:00Z"
+    },
+    {
+      "id": "2",
+      "customerId": "2",
+      "clothingIds": [
+        "1"
+      ],
+      "rentDate": "2024-01-10",
+      "returnDate": "2024-01-12",
+      "actualReturnDate": "2024-01-12",
+      "totalValue": 150,
+      "status": "returned",
+      "fine": 0,
+      "notes": "Devolução pontual",
+      "createdAt": "2024-01-10T14:00:00Z",
+      "updatedAt": "2024-01-12T16:00:00Z"
+    },
+    {
+      "id": "668e",
+      "customerId": "3",
+      "clothingIds": [
+        "3"
+      ],
+      "rentDate": "2025-07-04",
+      "returnDate": "2025-07-11",
+      "notes": "teste",
+      "totalValue": 100,
+      "status": "returned",
+      "createdAt": "2025-07-05T22:32:59.721Z",
+      "updatedAt": "2025-07-05T22:33:59.771Z",
+      "actualReturnDate": "2025-07-05",
+      "fine": 0
+    }
+  ]
+}
