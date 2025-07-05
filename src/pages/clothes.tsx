@@ -197,7 +197,6 @@ export default function ClothesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Gerenciar Roupas</h1>

@@ -1,12 +1,10 @@
 import type React from "react";
 
 import { useState } from "react";
-import { useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { Menu } from "lucide-react";
 import Sidebar from "../molecules/sidebar";
-import Header from "../molecules/header";
 import { DataProvider } from "../../contexts/data-context";
 
 interface LayoutProps {
@@ -15,29 +13,6 @@ interface LayoutProps {
 
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const location = useLocation();
-
-  const getPageTitle = () => {
-    const path = location.pathname;
-    switch (path) {
-      case "/dashboard":
-        return "Dashboard";
-      case "/calendar":
-        return "Calendário de Aluguéis";
-      case "/clothes":
-        return "Gerenciar Roupas";
-      case "/customers":
-        return "Gerenciar Clientes";
-      case "/rentals":
-        return "Novo Aluguel";
-      case "/returns":
-        return "Devoluções";
-      case "/reports":
-        return "Relatórios";
-      default:
-        return "Sistema de Aluguel";
-    }
-  };
 
   return (
     <DataProvider>
@@ -65,7 +40,6 @@ export default function Layout({ children }: LayoutProps) {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <Header title={getPageTitle()} />
           <main className="flex-1 overflow-y-auto p-6">{children}</main>
         </div>
       </div>
