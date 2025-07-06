@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useData } from "../contexts/data-context";
 import { useToast } from "../hooks/use-toast";
+import type { Clothing } from "../types/models";
 
 export default function ReturnsPage() {
   const [selectedRental, setSelectedRental] = useState<any>(null);
@@ -94,11 +95,13 @@ export default function ReturnsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Devoluções</h1>
-        <p className="text-muted-foreground">
-          Gerencie as devoluções de roupas alugadas
-        </p>
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Devoluções</h1>
+          <p className="text-muted-foreground">
+            Gerencie as devoluções de roupas alugadas
+          </p>
+        </div>
       </div>
 
       {/* Estatísticas Rápidas */}
@@ -305,25 +308,27 @@ export default function ReturnsPage() {
                                     Roupas a Devolver
                                   </h4>
                                   <div className="space-y-2">
-                                    {details.clothes.map((clothing, index) => (
-                                      <div
-                                        key={index}
-                                        className="flex justify-between items-center p-2 border rounded"
-                                      >
-                                        <div>
-                                          <span className="font-medium">
-                                            {clothing?.name}
-                                          </span>
-                                          <span className="text-sm text-muted-foreground ml-2">
-                                            ({clothing?.type} • {clothing?.size}
-                                            )
+                                    {details.clothes.map(
+                                      (clothing: Clothing, index: any) => (
+                                        <div
+                                          key={index}
+                                          className="flex justify-between items-center p-2 border rounded"
+                                        >
+                                          <div>
+                                            <span className="font-medium">
+                                              {clothing?.name}
+                                            </span>
+                                            <span className="text-sm text-muted-foreground ml-2">
+                                              ({clothing?.type} •{" "}
+                                              {clothing?.size})
+                                            </span>
+                                          </div>
+                                          <span>
+                                            R$ {clothing?.price.toFixed(2)}
                                           </span>
                                         </div>
-                                        <span>
-                                          R$ {clothing?.price.toFixed(2)}
-                                        </span>
-                                      </div>
-                                    ))}
+                                      )
+                                    )}
                                   </div>
                                 </div>
 

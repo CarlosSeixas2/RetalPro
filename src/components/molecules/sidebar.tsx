@@ -36,6 +36,11 @@ const navigation = [
     icon: Users,
   },
   {
+    name: "Calendário",
+    href: "/calendar",
+    icon: Calendar,
+  },
+  {
     name: "Novo Aluguel",
     href: "/rentals",
     icon: ShoppingCart,
@@ -49,11 +54,6 @@ const navigation = [
     name: "Relatórios",
     href: "/reports",
     icon: FileText,
-  },
-  {
-    name: "Calendário",
-    href: "/calendar",
-    icon: Calendar,
   },
 ];
 

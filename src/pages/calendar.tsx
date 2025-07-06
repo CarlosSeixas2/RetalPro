@@ -268,7 +268,7 @@ export default function CalendarPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Calendário de Aluguéis</h1>
           <p className="text-muted-foreground">

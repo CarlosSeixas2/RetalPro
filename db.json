@@ -26,7 +26,7 @@
       "price": 150,
       "notes": "Vestido elegante para festas",
       "createdAt": "2024-01-01T10:00:00Z",
-      "updatedAt": "2024-01-01T10:00:00Z"
+      "updatedAt": "2025-07-06T02:26:04.571Z"
     },
     {
       "id": "2",
@@ -50,7 +50,7 @@
       "price": 100,
       "notes": "Fantasia infantil completa",
       "createdAt": "2024-01-01T10:00:00Z",
-      "updatedAt": "2025-07-05T22:33:59.775Z"
+      "updatedAt": "2025-07-06T02:26:07.064Z"
     },
     {
       "id": "4",
@@ -147,6 +147,38 @@
       "createdAt": "2025-07-05T22:32:59.721Z",
       "updatedAt": "2025-07-05T22:33:59.771Z",
       "actualReturnDate": "2025-07-05",
+      "fine": 0
+    },
+    {
+      "id": "ba5b",
+      "customerId": "3",
+      "clothingIds": [
+        "3"
+      ],
+      "rentDate": "2025-07-06",
+      "returnDate": "2025-07-08",
+      "notes": "festa a fantasia",
+      "totalValue": 100,
+      "status": "returned",
+      "createdAt": "2025-07-05T23:14:29.915Z",
+      "updatedAt": "2025-07-06T02:26:07.054Z",
+      "actualReturnDate": "2025-07-06",
+      "fine": 0
+    },
+    {
+      "id": "4ceb",
+      "customerId": "1",
+      "clothingIds": [
+        "1"
+      ],
+      "rentDate": "2025-07-06",
+      "returnDate": "2025-07-13",
+      "notes": "",
+      "totalValue": 150,
+      "status": "returned",
+      "createdAt": "2025-07-06T02:25:43.989Z",
+      "updatedAt": "2025-07-06T02:26:04.560Z",
+      "actualReturnDate": "2025-07-06",
       "fine": 0
     }
   ]

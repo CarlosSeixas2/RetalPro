@@ -119,11 +119,13 @@ export default function RentalsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Novo Aluguel</h1>
-        <p className="text-muted-foreground">
-          Registre um novo aluguel de roupas
-        </p>
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Novo Aluguel</h1>
+          <p className="text-muted-foreground">
+            Registre um novo aluguel de roupas
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -270,7 +272,10 @@ export default function RentalsPage() {
                     <div className="flex items-start gap-3">
                       <Checkbox
                         checked={selectedClothes.includes(clothing.id)}
-                        onChange={() => {}}
+                        onCheckedChange={(checked) =>
+                          handleClothingToggle(clothing.id, Boolean(checked))
+                        }
+                        onClick={(e) => e.stopPropagation()} // impede que o clique duplo ocorra (card + checkbox)
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">

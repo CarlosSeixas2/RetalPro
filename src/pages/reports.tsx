@@ -121,11 +121,13 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Relatórios</h1>
-        <p className="text-muted-foreground">
-          Visualize e exporte relatórios de aluguéis
-        </p>
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Relatórios</h1>
+          <p className="text-muted-foreground">
+            Visualize e exporte relatórios de aluguéis
+          </p>
+        </div>
       </div>
 
       {/* Filtros */}

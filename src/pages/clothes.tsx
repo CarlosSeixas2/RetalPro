@@ -197,7 +197,7 @@ export default function ClothesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Gerenciar Roupas</h1>
           <p className="text-muted-foreground">
@@ -381,7 +381,6 @@ export default function ClothesPage() {
         </Dialog>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle>Filtros</CardTitle>

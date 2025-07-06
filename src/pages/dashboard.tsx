@@ -27,6 +27,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import Header from "../components/molecules/header";
 
 export default function Dashboard() {
   const { clothes, customers, rentals } = useData();
@@ -73,12 +74,10 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Visão geral do sistema de aluguel de roupas
-        </p>
-      </div>
+      <Header
+        title="Dashboard"
+        subtitle="Visão geral do sistema de aluguel de roupas"
+      />
 
       {overdueRentals.length > 0 && (
         <Alert variant="destructive">
