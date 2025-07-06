@@ -8,7 +8,7 @@ export interface Rental {
   returnDate: string;
   actualReturnDate?: string;
   totalValue: number;
-  status: "active" | "returned" | "overdue";
+  status: "active" | "returned" | "overdue" | "cancelled";
   fine?: number;
   notes?: string;
   createdAt: string;

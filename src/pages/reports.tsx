@@ -27,7 +27,7 @@ import {
 import { Badge } from "../components/ui/badge";
 import { Download, FileText, Calendar, Filter } from "lucide-react";
 import { useData } from "../contexts/data-context";
-import { useToast } from "../hooks/use-toast";
+import { toast } from "sonner";
 
 export default function ReportsPage() {
   const [dateFrom, setDateFrom] = useState("");
@@ -36,7 +36,6 @@ export default function ReportsPage() {
   const [customerFilter, setCustomerFilter] = useState("all");
 
   const { rentals, customers, clothes } = useData();
-  const { toast } = useToast();
 
   const filteredRentals = rentals.filter((rental) => {
     const matchesDateFrom = !dateFrom || rental.rentDate >= dateFrom;
@@ -65,8 +64,7 @@ export default function ReportsPage() {
   };
 
   const exportToPDF = () => {
-    toast({
-      title: "Exportando relatório...",
+    toast("Exportando relatório...", {
       description: "O relatório em PDF será baixado em breve.",
     });
     // Aqui seria implementada a lógica de exportação para PDF
@@ -106,8 +104,7 @@ export default function ReportsPage() {
     a.click();
     window.URL.revokeObjectURL(url);
 
-    toast({
-      title: "Relatório exportado!",
+    toast("Relatório exportado!", {
       description: "O arquivo CSV foi baixado com sucesso.",
     });
   };

@@ -13,19 +13,34 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../components/ui/command";
 import { Checkbox } from "../components/ui/checkbox";
 import { Textarea } from "../components/ui/textarea";
 import { Badge } from "../components/ui/badge";
 import { Separator } from "../components/ui/separator";
-import { CalendarDays, User, Shirt, DollarSign, Plus } from "lucide-react";
+import {
+  CalendarDays,
+  User,
+  Shirt,
+  DollarSign,
+  Plus,
+  ChevronsUpDown,
+  Check,
+} from "lucide-react";
 import { useData } from "../contexts/data-context";
-import { useToast } from "../hooks/use-toast";
+import { cn } from "../lib/utils";
+import { toast } from "sonner";
 
 const rentalSchema = z.object({
   customerId: z.string().min(1, "Cliente é obrigatório"),
@@ -40,9 +55,9 @@ type RentalForm = z.infer<typeof rentalSchema>;
 export default function RentalsPage() {
   const [selectedClothes, setSelectedClothes] = useState<string[]>([]);
   const [totalValue, setTotalValue] = useState(0);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const { customers, clothes, addRental } = useData();
-  const { toast } = useToast();
 
   const {
     register,
@@ -79,7 +94,6 @@ export default function RentalsPage() {
     setSelectedClothes(newSelection);
     setValue("clothingIds", newSelection);
 
-    // Calcular valor total
     const total = newSelection.reduce((sum, id) => {
       const clothing = clothes.find((c) => c.id === id);
       return sum + (clothing?.price || 0);
@@ -95,30 +109,35 @@ export default function RentalsPage() {
       status: "active" as const,
     };
 
-    addRental(rental);
+    try {
+      addRental(rental);
 
-    toast({
-      title: "Aluguel registrado!",
-      description: `Aluguel para ${selectedCustomer?.name} foi criado com sucesso.`,
-    });
+      toast("Aluguel registrado!", {
+        description: `Aluguel para ${selectedCustomer?.name} foi criado com sucesso.`,
+      });
 
-    // Reset form
-    reset({
-      customerId: "",
-      clothingIds: [],
-      rentDate: new Date().toISOString().split("T")[0],
-      returnDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      notes: "",
-    });
-    setSelectedClothes([]);
-    setTotalValue(0);
+      reset({
+        customerId: "",
+        clothingIds: [],
+        rentDate: new Date().toISOString().split("T")[0],
+        returnDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0],
+        notes: "",
+      });
+      setSelectedClothes([]);
+      setTotalValue(0);
+    } catch (error) {
+      console.error("Falha ao registrar aluguel:", error);
+      toast("Erro ao registrar!", {
+        description:
+          "Não foi possível criar o aluguel. Por favor, tente novamente.",
+      });
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Novo Aluguel</h1>
@@ -130,7 +149,6 @@ export default function RentalsPage() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Seleção de Cliente */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -140,26 +158,59 @@ export default function RentalsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="customer">Cliente</Label>
-                <Select
-                  onValueChange={(value) => setValue("customerId", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um cliente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{customer.name}</span>
-                          <span className="text-sm text-muted-foreground">
-                            {customer.cpf} • {customer.phone}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Cliente</Label>
+                <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={comboboxOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedCustomerId
+                        ? customers.find(
+                            (customer) => customer.id === selectedCustomerId
+                          )?.name
+                        : "Selecione um cliente..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                      <CommandInput placeholder="Buscar cliente..." />
+                      <CommandList>
+                        <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                        <CommandGroup>
+                          {customers.map((customer) => (
+                            <CommandItem
+                              key={customer.id}
+                              value={customer.name}
+                              onSelect={() => {
+                                setValue("customerId", customer.id);
+                                setComboboxOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedCustomerId === customer.id
+                                    ? "opacity-100"
+                                    : "opacity-0"
+                                )}
+                              />
+                              <div className="flex flex-col">
+                                <span>{customer.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {customer.cpf}
+                                </span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {errors.customerId && (
                   <p className="text-sm text-destructive">
                     {errors.customerId.message}
@@ -189,7 +240,6 @@ export default function RentalsPage() {
             </CardContent>
           </Card>
 
-          {/* Datas */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -208,7 +258,6 @@ export default function RentalsPage() {
                     </p>
                   )}
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="returnDate">Data de Devolução</Label>
                   <Input
@@ -223,7 +272,6 @@ export default function RentalsPage() {
                   )}
                 </div>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="notes">Observações</Label>
                 <Textarea
@@ -236,7 +284,6 @@ export default function RentalsPage() {
           </Card>
         </div>
 
-        {/* Seleção de Roupas */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -257,17 +304,11 @@ export default function RentalsPage() {
                 {availableClothes.map((clothing) => (
                   <div
                     key={clothing.id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                    className={`border rounded-lg p-4 transition-colors ${
                       selectedClothes.includes(clothing.id)
                         ? "border-primary bg-primary/5"
                         : "border-border hover:border-primary/50"
                     }`}
-                    onClick={() =>
-                      handleClothingToggle(
-                        clothing.id,
-                        !selectedClothes.includes(clothing.id)
-                      )
-                    }
                   >
                     <div className="flex items-start gap-3">
                       <Checkbox
@@ -275,7 +316,6 @@ export default function RentalsPage() {
                         onCheckedChange={(checked) =>
                           handleClothingToggle(clothing.id, Boolean(checked))
                         }
-                        onClick={(e) => e.stopPropagation()} // impede que o clique duplo ocorra (card + checkbox)
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-medium truncate">
@@ -301,7 +341,6 @@ export default function RentalsPage() {
                 ))}
               </div>
             )}
-
             {errors.clothingIds && (
               <p className="text-sm text-destructive mt-2">
                 {errors.clothingIds.message}
@@ -310,7 +349,6 @@ export default function RentalsPage() {
           </CardContent>
         </Card>
 
-        {/* Resumo do Aluguel */}
         {selectedClothes.length > 0 && (
           <Card>
             <CardHeader>
@@ -326,7 +364,6 @@ export default function RentalsPage() {
                   {selectedClothes.map((clothingId) => {
                     const clothing = clothes.find((c) => c.id === clothingId);
                     if (!clothing) return null;
-
                     return (
                       <div
                         key={clothingId}
@@ -346,9 +383,7 @@ export default function RentalsPage() {
                     );
                   })}
                 </div>
-
                 <Separator />
-
                 <div className="flex justify-between items-center text-lg font-bold">
                   <span>Total:</span>
                   <span className="text-green-600">
@@ -360,7 +395,6 @@ export default function RentalsPage() {
           </Card>
         )}
 
-        {/* Botões de Ação */}
         <div className="flex justify-end gap-4">
           <Button
             type="button"

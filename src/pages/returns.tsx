@@ -36,7 +36,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useData } from "../contexts/data-context";
-import { useToast } from "../hooks/use-toast";
+import { toast } from "sonner";
 import type { Clothing } from "../types/models";
 
 export default function ReturnsPage() {
@@ -47,7 +47,6 @@ export default function ReturnsPage() {
   const [notes, setNotes] = useState("");
 
   const { rentals, customers, clothes, returnRental } = useData();
-  const { toast } = useToast();
 
   const activeRentals = rentals.filter((rental) => rental.status === "active");
 
@@ -57,9 +56,13 @@ export default function ReturnsPage() {
       .map((id: string) => clothes.find((c) => c.id === id))
       .filter(Boolean);
 
+    // ALTERAÇÃO AQUI: Lógica de data corrigida para evitar problemas de fuso horário
     const today = new Date();
-    const expectedReturn = new Date(rental.returnDate);
+    today.setUTCHours(0, 0, 0, 0); // Zera a hora para comparar apenas os dias em UTC
+    const expectedReturn = new Date(rental.returnDate); // A data do JSON já é UTC
+
     const isOverdue = today > expectedReturn;
+
     const daysLate = isOverdue
       ? Math.ceil(
           (today.getTime() - expectedReturn.getTime()) / (1000 * 60 * 60 * 24)
@@ -82,8 +85,7 @@ export default function ReturnsPage() {
 
     const details = getRentalDetails(selectedRental);
 
-    toast({
-      title: "Devolução registrada!",
+    toast("Devolução registrada!", {
       description: `Roupas de ${details.customer?.name} foram devolvidas.`,
     });
 
@@ -153,9 +155,8 @@ export default function ReturnsPage() {
             <div className="text-2xl font-bold text-red-600">
               {
                 activeRentals.filter((rental) => {
-                  const today = new Date();
-                  const returnDate = new Date(rental.returnDate);
-                  return today > returnDate;
+                  const details = getRentalDetails(rental);
+                  return details.isOverdue;
                 }).length
               }
             </div>
@@ -233,16 +234,20 @@ export default function ReturnsPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {/* ALTERAÇÃO AQUI: Corrigido fuso horário */}
                           {new Date(rental.rentDate).toLocaleDateString(
-                            "pt-BR"
+                            "pt-BR",
+                            { timeZone: "UTC" }
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
+                          {/* ALTERAÇÃO AQUI: Corrigido fuso horário */}
                           {new Date(rental.returnDate).toLocaleDateString(
-                            "pt-BR"
+                            "pt-BR",
+                            { timeZone: "UTC" }
                           )}
                         </div>
                       </TableCell>
@@ -281,30 +286,42 @@ export default function ReturnsPage() {
                               Registrar Devolução
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-2xl space-y-6">
                             <DialogHeader>
-                              <DialogTitle>Registrar Devolução</DialogTitle>
+                              <DialogTitle className="text-xl">
+                                Registrar Devolução
+                              </DialogTitle>
                               <DialogDescription>
                                 Confirme os detalhes da devolução das roupas
+                                alugadas.
                               </DialogDescription>
                             </DialogHeader>
 
                             {selectedRental && (
                               <div className="space-y-6">
-                                {/* Informações do Cliente */}
-                                <div className="p-4 bg-muted rounded-lg">
-                                  <h4 className="font-medium mb-2">Cliente</h4>
-                                  <p className="text-sm">
-                                    <strong>{details.customer?.name}</strong>
-                                    <br />
-                                    {details.customer?.phone} •{" "}
-                                    {details.customer?.email}
-                                  </p>
-                                </div>
+                                {/* Cliente */}
+                                <section>
+                                  <h4 className="text-base font-semibold text-muted-foreground mb-2">
+                                    Cliente
+                                  </h4>
+                                  <div className="p-4 bg-muted/30 border rounded-xl shadow-sm">
+                                    <p className="text-sm leading-6">
+                                      <strong className="block text-base text-primary">
+                                        {details.customer?.name}
+                                      </strong>
+                                      <span className="block">
+                                        Telefone: {details.customer?.phone}
+                                      </span>
+                                      <span className="block">
+                                        Email: {details.customer?.email}
+                                      </span>
+                                    </p>
+                                  </div>
+                                </section>
 
                                 {/* Roupas */}
-                                <div>
-                                  <h4 className="font-medium mb-2">
+                                <section>
+                                  <h4 className="text-base font-semibold text-muted-foreground mb-2">
                                     Roupas a Devolver
                                   </h4>
                                   <div className="space-y-2">
@@ -312,45 +329,49 @@ export default function ReturnsPage() {
                                       (clothing: Clothing, index: any) => (
                                         <div
                                           key={index}
-                                          className="flex justify-between items-center p-2 border rounded"
+                                          className="flex justify-between items-center p-3 bg-white border rounded-lg shadow-sm"
                                         >
                                           <div>
-                                            <span className="font-medium">
+                                            <span className="font-medium text-sm">
                                               {clothing?.name}
                                             </span>
-                                            <span className="text-sm text-muted-foreground ml-2">
+                                            <span className="text-xs text-muted-foreground ml-2">
                                               ({clothing?.type} •{" "}
                                               {clothing?.size})
                                             </span>
                                           </div>
-                                          <span>
+                                          <span className="text-sm font-semibold text-primary">
                                             R$ {clothing?.price.toFixed(2)}
                                           </span>
                                         </div>
                                       )
                                     )}
                                   </div>
-                                </div>
+                                </section>
 
-                                {/* Cálculo de Multa */}
+                                {/* Multa */}
                                 {details.isOverdue && (
-                                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                                    <div className="flex items-center gap-2 mb-2">
+                                  <section className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                                    <div className="flex items-center gap-2 mb-1">
                                       <AlertTriangle className="h-4 w-4 text-red-600" />
-                                      <h4 className="font-medium text-red-800">
+                                      <h4 className="font-semibold text-red-800">
                                         Aluguel em Atraso
                                       </h4>
                                     </div>
                                     <p className="text-sm text-red-700">
                                       {details.daysLate} dia(s) de atraso •
-                                      Multa: R$ {details.fine.toFixed(2)} (R$
-                                      20/dia)
+                                      Multa:
+                                      <span className="font-medium">
+                                        {" "}
+                                        R$ {details.fine.toFixed(2)}
+                                      </span>{" "}
+                                      (R$ 20/dia)
                                     </p>
-                                  </div>
+                                  </section>
                                 )}
 
                                 {/* Data de Devolução */}
-                                <div className="space-y-2">
+                                <section className="space-y-2">
                                   <Label htmlFor="returnDate">
                                     Data da Devolução
                                   </Label>
@@ -362,10 +383,10 @@ export default function ReturnsPage() {
                                       setReturnDate(e.target.value)
                                     }
                                   />
-                                </div>
+                                </section>
 
                                 {/* Observações */}
-                                <div className="space-y-2">
+                                <section className="space-y-2">
                                   <Label htmlFor="notes">Observações</Label>
                                   <Textarea
                                     id="notes"
@@ -373,11 +394,11 @@ export default function ReturnsPage() {
                                     value={notes}
                                     onChange={(e) => setNotes(e.target.value)}
                                   />
-                                </div>
+                                </section>
 
                                 {/* Resumo Total */}
-                                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                                  <div className="flex justify-between items-center">
+                                <section className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                                  <div className="flex justify-between items-center mb-1">
                                     <span className="font-medium">
                                       Total a Receber:
                                     </span>
@@ -389,21 +410,16 @@ export default function ReturnsPage() {
                                     </span>
                                   </div>
                                   {details.fine > 0 && (
-                                    <p className="text-sm text-green-700 mt-1">
+                                    <p className="text-sm text-green-700">
                                       Valor original: R${" "}
                                       {rental.totalValue.toFixed(2)} + Multa: R${" "}
                                       {details.fine.toFixed(2)}
                                     </p>
                                   )}
-                                </div>
+                                </section>
 
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => setSelectedRental(null)}
-                                  >
-                                    Cancelar
-                                  </Button>
+                                {/* Botões de Ação */}
+                                <div className="flex justify-end gap-3 pt-4">
                                   <Button onClick={handleReturn}>
                                     Confirmar Devolução
                                   </Button>

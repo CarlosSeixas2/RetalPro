@@ -41,8 +41,9 @@ import {
   AlertDialogTrigger,
 } from "../components/ui/alert-dialog";
 import { Plus, Edit, Trash2, Search, History } from "lucide-react";
-import { useData, type Customer } from "../contexts/data-context";
-import { useToast } from "../hooks/use-toast";
+import { useData } from "../contexts/data-context";
+import { toast } from "sonner";
+import type { Customer } from "../types/models";
 
 const customerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -62,7 +63,6 @@ export default function CustomersPage() {
 
   const { customers, rentals, addCustomer, updateCustomer, deleteCustomer } =
     useData();
-  const { toast } = useToast();
 
   const {
     register,
@@ -100,14 +100,12 @@ export default function CustomersPage() {
 
     if (editingCustomer) {
       updateCustomer(editingCustomer.id, formattedData);
-      toast({
-        title: "Cliente atualizado!",
+      toast("Cliente atualizado!", {
         description: "As informações foram salvas com sucesso.",
       });
     } else {
       addCustomer(formattedData);
-      toast({
-        title: "Cliente cadastrado!",
+      toast("Cliente cadastrado!", {
         description: "Novo cliente adicionado ao sistema.",
       });
     }
@@ -133,19 +131,15 @@ export default function CustomersPage() {
     );
 
     if (activeRentals.length > 0) {
-      toast({
-        title: "Não é possível excluir",
+      toast("Não é possível excluir", {
         description: "Este cliente possui aluguéis ativos.",
-        variant: "destructive",
       });
       return;
     }
 
     deleteCustomer(id);
-    toast({
-      title: "Cliente removido!",
+    toast("Cliente removido!", {
       description: "O cliente foi removido do sistema.",
-      variant: "destructive",
     });
   };
 

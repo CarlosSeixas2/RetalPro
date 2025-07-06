@@ -1,6 +1,11 @@
-"use client";
+// src/app/calendar/calendar.tsx
 
 import { DialogTrigger } from "../components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../components/ui/popover";
 
 import { useState, useMemo, useCallback } from "react";
 import { useForm } from "react-hook-form";
@@ -35,20 +40,18 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
-  Plus,
   Edit,
   Shirt,
-  AlertTriangle,
   CheckCircle,
 } from "lucide-react";
 import {
   useRentals,
   useCreateRental,
   useUpdateRental,
-  useReturnRental,
 } from "../hooks/use-rentals";
 import { useCustomers } from "../hooks/use-customers";
-import { useAvailableClothes } from "../hooks/use-clothes";
+// CORREÇÃO: Importar ambos os hooks para roupas
+import { useClothes, useAvailableClothes } from "../hooks/use-clothes";
 import type { Rental } from "../services/rentals";
 
 const rentalSchema = z.object({
@@ -80,7 +83,6 @@ const WEEKDAYS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<string>("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRental, setEditingRental] = useState<Rental | null>(null);
   const [viewingRental, setViewingRental] = useState<Rental | null>(null);
@@ -88,10 +90,11 @@ export default function CalendarPage() {
 
   const { data: rentals = [] } = useRentals();
   const { data: customers = [] } = useCustomers();
+  // CORREÇÃO: Usar os dois hooks de roupas
+  const { data: allClothes = [] } = useClothes();
   const { data: availableClothes = [] } = useAvailableClothes();
   const createRentalMutation = useCreateRental();
   const updateRentalMutation = useUpdateRental();
-  const returnRentalMutation = useReturnRental();
 
   const {
     register,
@@ -110,7 +113,6 @@ export default function CalendarPage() {
     const month = currentDate.getMonth();
 
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
@@ -126,20 +128,33 @@ export default function CalendarPage() {
   }, [currentDate]);
 
   // Agrupar aluguéis por data
-  type RentalWithEventType = Rental & { eventType: "rent" | "return" };
+  type RentalWithEventType = Rental & {
+    eventType: "rent" | "return" | "returned" | "overdue";
+  };
+
   const rentalsByDate = useMemo(() => {
     const grouped: Record<string, RentalWithEventType[]> = {};
 
     rentals.forEach((rental) => {
       const rentDate = rental.rentDate;
       const returnDate = rental.returnDate;
+      const isReturned = rental.status === "returned";
+      const now = new Date();
 
-      // Adicionar aluguel nas datas de retirada e devolução
+      // Evento de retirada
       if (!grouped[rentDate]) grouped[rentDate] = [];
+      grouped[rentDate].push({ ...rental, eventType: "rent" });
+
+      // Evento de devolução (prevista ou realizada)
       if (!grouped[returnDate]) grouped[returnDate] = [];
 
-      grouped[rentDate].push({ ...rental, eventType: "rent" });
-      if (rental.status === "active") {
+      const returnDateObj = new Date(returnDate + "T23:59:59");
+
+      if (isReturned) {
+        grouped[returnDate].push({ ...rental, eventType: "returned" });
+      } else if (returnDateObj < now) {
+        grouped[returnDate].push({ ...rental, eventType: "overdue" });
+      } else {
         grouped[returnDate].push({ ...rental, eventType: "return" });
       }
     });
@@ -177,18 +192,6 @@ export default function CalendarPage() {
     return rentalsByDate[dateKey] || [];
   };
 
-  const handleDateClick = (date: Date) => {
-    const dateKey = formatDateKey(date);
-    setSelectedDate(dateKey);
-    setValue("rentDate", dateKey);
-    setValue(
-      "returnDate",
-      new Date(date.getTime() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0]
-    );
-  };
-
   const handleClothingToggle = useCallback(
     (clothingId: string, checked: boolean) => {
       let newSelection: string[];
@@ -203,21 +206,32 @@ export default function CalendarPage() {
     [selectedClothes, setValue]
   );
 
+  // CORREÇÃO: Lógica de submit ajustada
   const onSubmit = (data: RentalForm) => {
-    const rentalData = {
+    const rentalPayload = {
       ...data,
       clothingIds: selectedClothes,
       totalValue: selectedClothes.reduce((sum, id) => {
-        const clothing = availableClothes.find((c) => c.id === id);
+        const clothing = allClothes.find((c) => c.id === id); // Usar allClothes para cálculo
         return sum + (clothing?.price || 0);
       }, 0),
-      status: "active" as const,
     };
 
     if (editingRental) {
-      updateRentalMutation.mutate({ id: editingRental.id, data: rentalData });
+      const updateData = {
+        ...rentalPayload,
+        status: editingRental.status, // Preservar status original ao editar
+      };
+
+      // A lógica para ATUALIZAR O STATUS DAS ROUPAS (disponível/alugado)
+      // deve ser implementada dentro do hook `useUpdateRental`.
+      updateRentalMutation.mutate({ id: editingRental.id, data: updateData });
     } else {
-      createRentalMutation.mutate(rentalData);
+      const createData = {
+        ...rentalPayload,
+        status: "active" as const,
+      };
+      createRentalMutation.mutate(createData);
     }
 
     handleCloseDialog();
@@ -234,14 +248,6 @@ export default function CalendarPage() {
     setIsDialogOpen(true);
   };
 
-  const handleReturn = (rental: Rental) => {
-    returnRentalMutation.mutate({
-      rentalId: rental.id,
-      actualReturnDate: new Date().toISOString().split("T")[0],
-      clothingIds: rental.clothingIds,
-    });
-  };
-
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingRental(null);
@@ -256,14 +262,32 @@ export default function CalendarPage() {
     );
   };
 
+  // CORREÇÃO: Usar allClothes para encontrar nomes de roupas
   const getClothingNames = (clothingIds: string[]) => {
     return clothingIds
       .map((id) => {
-        const clothing = availableClothes.find((c) => c.id === id);
+        const clothing = allClothes.find((c) => c.id === id);
         return clothing?.name || "Roupa não encontrada";
       })
       .join(", ");
   };
+
+  const handleMonthChange = (monthIndex: string) => {
+    const newDate = new Date(currentDate);
+    newDate.setMonth(parseInt(monthIndex, 10));
+    setCurrentDate(newDate);
+  };
+
+  const handleYearChange = (year: string) => {
+    const newDate = new Date(currentDate);
+    newDate.setFullYear(parseInt(year, 10));
+    setCurrentDate(newDate);
+  };
+
+  const yearOptions = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 11 }, (_, i) => currentYear - 5 + i);
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -278,10 +302,7 @@ export default function CalendarPage() {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditingRental(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Aluguel
-            </Button>
+            {/* O botão para criar um novo aluguel pode ser adicionado aqui, se necessário */}
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -302,7 +323,7 @@ export default function CalendarPage() {
                   <Select
                     onValueChange={(value) => setValue("customerId", value)}
                     value={watch("customerId") || ""}
-                    key={editingRental?.id || "new"} // Adicionar key única
+                    key={editingRental?.id || "new"}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um cliente" />
@@ -365,6 +386,7 @@ export default function CalendarPage() {
                   Roupas Disponíveis ({selectedClothes.length} selecionadas)
                 </Label>
                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 max-h-60 overflow-y-auto border rounded-lg p-4">
+                  {/* A lista para seleção continua sendo `availableClothes` */}
                   {availableClothes.map((clothing) => (
                     <div
                       key={clothing.id}
@@ -430,9 +452,8 @@ export default function CalendarPage() {
                       R${" "}
                       {selectedClothes
                         .reduce((sum, id) => {
-                          const clothing = availableClothes.find(
-                            (c) => c.id === id
-                          );
+                          // CORREÇÃO: Usar allClothes para cálculo de preço no resumo
+                          const clothing = allClothes.find((c) => c.id === id);
                           return sum + (clothing?.price || 0);
                         }, 0)
                         .toFixed(2)}
@@ -481,12 +502,38 @@ export default function CalendarPage() {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentDate(new Date())}
-            >
-              Hoje
-            </Button>
+            <div className="flex items-center gap-2">
+              <Select
+                value={currentDate.getMonth().toString()}
+                onValueChange={handleMonthChange}
+              >
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((month, index) => (
+                    <SelectItem key={month} value={index.toString()}>
+                      {month}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={currentDate.getFullYear().toString()}
+                onValueChange={handleYearChange}
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -510,100 +557,121 @@ export default function CalendarPage() {
               const isTodayDate = isToday(date);
 
               return (
-                <div
-                  key={index}
-                  className={`min-h-[120px] p-2 border rounded-lg cursor-pointer transition-colors ${
-                    isTodayDate
-                      ? "bg-primary/10 border-primary"
-                      : isCurrentMonthDay
-                      ? "bg-background hover:bg-accent"
-                      : "bg-muted/30 text-muted-foreground"
-                  }`}
-                  onClick={() => handleDateClick(date)}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`text-sm font-medium ${
-                        isTodayDate ? "text-primary" : ""
+                <Popover key={index}>
+                  <PopoverTrigger asChild>
+                    <div
+                      className={`min-h-[100px] p-2 border rounded-lg cursor-pointer transition-colors ${
+                        isTodayDate
+                          ? "bg-primary/10 border-primary"
+                          : isCurrentMonthDay
+                          ? "bg-background hover:bg-accent"
+                          : "bg-muted/30 text-muted-foreground"
                       }`}
                     >
-                      {date.getDate()}
-                    </span>
-                    {dayRentals.length > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {dayRentals.length}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Eventos do dia */}
-                  <div className="space-y-1">
-                    {dayRentals.slice(0, 3).map((rental, idx) => {
-                      const isRentEvent = (rental as any).eventType === "rent";
-                      const isOverdue =
-                        rental.status === "active" &&
-                        new Date(rental.returnDate) < new Date();
-
-                      return (
-                        <div
-                          key={`${rental.id}-${idx}`}
-                          className={`text-xs p-1 rounded truncate ${
-                            isRentEvent
-                              ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
-                              : isOverdue
-                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
-                              : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      <div className="flex items-center justify-between mb-2">
+                        <span
+                          className={`text-sm font-medium ${
+                            isTodayDate ? "text-primary" : ""
                           }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setViewingRental(rental);
-                          }}
                         >
-                          <div className="flex items-center gap-1">
-                            {isRentEvent ? (
-                              <Shirt className="h-3 w-3" />
-                            ) : isOverdue ? (
-                              <AlertTriangle className="h-3 w-3" />
-                            ) : (
-                              <CheckCircle className="h-3 w-3" />
-                            )}
-                            <span className="truncate">
-                              {getCustomerName(rental.customerId)}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {dayRentals.length > 3 && (
-                      <div className="text-xs text-muted-foreground text-center">
-                        +{dayRentals.length - 3} mais
+                          {date.getDate()}
+                        </span>
+                        {dayRentals.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            {dayRentals.length}
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </div>
+
+                      {/* Eventos do dia (bolinhas) */}
+                      <div className="flex flex-wrap gap-1">
+                        {dayRentals.slice(0, 9).map((rental, idx) => {
+                          const circleColorClass = {
+                            rent: "bg-blue-500",
+                            return: "bg-yellow-500",
+                            returned: "bg-green-500",
+                            overdue: "bg-red-500",
+                          }[rental.eventType];
+
+                          return (
+                            <div
+                              key={`${rental.id}-${idx}`}
+                              className={`w-2.5 h-2.5 rounded-full ${circleColorClass}`}
+                            />
+                          );
+                        })}
+                        {dayRentals.length > 9 && (
+                          <div className="text-xs text-muted-foreground">
+                            +{dayRentals.length - 9}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="space-y-2">
+                      {dayRentals.length > 0 ? (
+                        dayRentals.map((rental, idx) => {
+                          const isRentEvent = rental.eventType === "rent";
+                          return (
+                            <div
+                              key={`${rental.id}-${idx}`}
+                              className="flex items-center justify-between p-2 hover:bg-accent rounded-md cursor-pointer"
+                              onClick={() => setViewingRental(rental)}
+                            >
+                              <div className="flex items-center gap-2">
+                                {isRentEvent ? (
+                                  <Shirt className="h-4 w-4 text-blue-500" />
+                                ) : (
+                                  <CheckCircle className="h-4 w-4 text-green-500" />
+                                )}
+                                <div>
+                                  <p className="text-sm font-medium">
+                                    {getCustomerName(rental.customerId)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {isRentEvent ? "Retirada" : "Devolução"}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Nenhum aluguel para este dia.
+                        </p>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
               );
             })}
           </div>
         </CardContent>
       </Card>
 
-      {/* Legenda */}
+      {/* CORREÇÃO: Legenda completa e corrigida */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Legenda</CardTitle>
+          <CardTitle className="text-lg">Legenda dos Eventos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
+          <div className="flex flex-wrap gap-x-6 gap-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded"></div>
+              <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
               <span className="text-sm">Retirada de Aluguel</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-green-100 border border-green-300 rounded"></div>
+              <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
               <span className="text-sm">Devolução Prevista</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-red-100 border border-red-300 rounded"></div>
+              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+              <span className="text-sm">Devolução Realizada</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-red-500 rounded-full"></div>
               <span className="text-sm">Devolução Atrasada</span>
             </div>
           </div>
@@ -618,104 +686,113 @@ export default function CalendarPage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Aluguel</DialogTitle>
-            <DialogDescription>
-              Informações completas do aluguel selecionado
-            </DialogDescription>
           </DialogHeader>
 
           {viewingRental && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">Cliente</Label>
-                  <p className="text-sm">
-                    {getCustomerName(viewingRental.customerId)}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Status</Label>
-                  <Badge
-                    variant={
-                      viewingRental.status === "active"
-                        ? "default"
-                        : "secondary"
-                    }
-                  >
-                    {viewingRental.status === "active" ? "Ativo" : "Devolvido"}
-                  </Badge>
-                </div>
+            <div className="space-y-6 pt-4 text-sm">
+              {/* Cliente */}
+              <div className="rounded-xl border p-4 shadow-sm">
+                <h4 className="text-muted-foreground text-xs font-semibold mb-1">
+                  Cliente
+                </h4>
+                <p className="text-base font-medium">
+                  {getCustomerName(viewingRental.customerId)}
+                </p>
               </div>
 
+              {/* Datas */}
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-sm font-medium">
+                <div className="rounded-xl border p-4 shadow-sm">
+                  <h4 className="text-muted-foreground text-xs font-semibold mb-1">
                     Data de Retirada
-                  </Label>
-                  <p className="text-sm">
-                    {new Date(viewingRental.rentDate).toLocaleDateString(
-                      "pt-BR"
-                    )}
+                  </h4>
+                  <p className="text-base">
+                    {new Date(
+                      viewingRental.rentDate + "T03:00:00Z"
+                    ).toLocaleDateString("pt-BR", {
+                      timeZone: "UTC",
+                    })}
                   </p>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium">
+                <div className="rounded-xl border p-4 shadow-sm">
+                  <h4 className="text-muted-foreground text-xs font-semibold mb-1">
                     Data de Devolução
-                  </Label>
-                  <p className="text-sm">
-                    {new Date(viewingRental.returnDate).toLocaleDateString(
-                      "pt-BR"
-                    )}
+                  </h4>
+                  <p className="text-base">
+                    {new Date(
+                      viewingRental.returnDate + "T03:00:00Z"
+                    ).toLocaleDateString("pt-BR", {
+                      timeZone: "UTC",
+                    })}
                   </p>
                 </div>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium">Roupas</Label>
-                <p className="text-sm">
+              {/* Roupas Alugadas */}
+              <div className="rounded-xl border p-4 shadow-sm">
+                <h4 className="text-muted-foreground text-xs font-semibold mb-1">
+                  Roupas Alugadas
+                </h4>
+                <p className="text-base">
                   {getClothingNames(viewingRental.clothingIds)}
                 </p>
               </div>
 
-              <div>
-                <Label className="text-sm font-medium">Valor Total</Label>
-                <p className="text-lg font-bold text-green-600">
-                  R$ {viewingRental.totalValue.toFixed(2)}
-                </p>
+              {/* Valor Total */}
+              <div className="rounded-xl border p-4 shadow-sm flex justify-between items-center">
+                <div>
+                  <h4 className="text-muted-foreground text-xs font-semibold mb-1">
+                    Valor Total
+                  </h4>
+                  <p className="text-lg font-bold text-green-600">
+                    R$ {viewingRental.totalValue.toFixed(2)}
+                  </p>
+                </div>
               </div>
 
+              {/* Observações */}
               {viewingRental.notes && (
-                <div>
-                  <Label className="text-sm font-medium">Observações</Label>
-                  <p className="text-sm">{viewingRental.notes}</p>
+                <div className="rounded-xl border p-4 shadow-sm">
+                  <h4 className="text-muted-foreground text-xs font-semibold mb-1">
+                    Observações
+                  </h4>
+                  <p className="text-sm italic text-muted-foreground">
+                    {viewingRental.notes}
+                  </p>
                 </div>
               )}
 
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setViewingRental(null)}
+              {/* Status */}
+              <div className="rounded-xl border p-4 shadow-sm flex items-center gap-2">
+                <h4 className="text-muted-foreground text-xs font-semibold mb-1">
+                  Status:
+                </h4>
+                <Badge
+                  variant={
+                    viewingRental.status === "active" ? "default" : "secondary"
+                  }
                 >
-                  Fechar
-                </Button>
+                  {viewingRental.status === "active" ? "Ativo" : "Devolvido"}
+                </Badge>
+              </div>
+
+              {/* Ações */}
+              <div className="flex justify-end gap-2 pt-4">
                 <Button
-                  variant="outline"
                   onClick={() => {
                     setViewingRental(null);
                     handleEdit(viewingRental);
                   }}
+                  variant="outline"
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Editar
                 </Button>
-                {viewingRental.status === "active" && (
-                  <Button
-                    onClick={() => {
-                      setViewingRental(null);
-                      handleReturn(viewingRental);
-                    }}
-                  >
+
+                {viewingRental.status !== "returned" && (
+                  <Button>
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Marcar como Devolvido
+                    Devolver
                   </Button>
                 )}
               </div>

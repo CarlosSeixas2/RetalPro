@@ -5,7 +5,7 @@ import {
   type UpdateRentalData,
 } from "../services/rentals";
 import { clothesService } from "../services/clothes";
-import { useToast } from "../hooks/use-toast";
+import { toast } from "sonner";
 
 export function useRentals() {
   return useQuery({
@@ -31,7 +31,6 @@ export function useActiveRentals() {
 
 export function useCreateRental() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (data: CreateRentalData) => {
@@ -50,16 +49,13 @@ export function useCreateRental() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rentals"] });
       queryClient.invalidateQueries({ queryKey: ["clothes"] });
-      toast({
-        title: "Aluguel registrado!",
+      toast.success("Aluguel registrado!", {
         description: "Aluguel criado com sucesso.",
       });
     },
     onError: (error) => {
-      toast({
-        title: "Erro ao registrar aluguel",
+      toast.error("Erro ao registrar aluguel", {
         description: "Tente novamente mais tarde.",
-        variant: "destructive",
       });
       console.error("Erro ao criar aluguel:", error);
     },
@@ -68,23 +64,19 @@ export function useCreateRental() {
 
 export function useUpdateRental() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateRentalData }) =>
       rentalsService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rentals"] });
-      toast({
-        title: "Aluguel atualizado!",
+      toast("Aluguel atualizado!", {
         description: "As informações foram salvas com sucesso.",
       });
     },
     onError: (error) => {
-      toast({
-        title: "Erro ao atualizar aluguel",
+      toast("Erro ao atualizar aluguel", {
         description: "Tente novamente mais tarde.",
-        variant: "destructive",
       });
       console.error("Erro ao atualizar aluguel:", error);
     },
@@ -93,7 +85,6 @@ export function useUpdateRental() {
 
 export function useReturnRental() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({
@@ -139,16 +130,13 @@ export function useReturnRental() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rentals"] });
       queryClient.invalidateQueries({ queryKey: ["clothes"] });
-      toast({
-        title: "Devolução registrada!",
+      toast("Devolução registrada!", {
         description: "Roupas devolvidas com sucesso.",
       });
     },
     onError: (error) => {
-      toast({
-        title: "Erro ao registrar devolução",
+      toast("Erro ao registrar devolução", {
         description: "Tente novamente mais tarde.",
-        variant: "destructive",
       });
       console.error("Erro ao retornar aluguel:", error);
     },
@@ -160,5 +148,46 @@ export function useCustomerRentals(customerId: string) {
     queryKey: ["rentals", "customer", customerId],
     queryFn: () => rentalsService.getByCustomer(customerId),
     enabled: !!customerId,
+  });
+}
+
+export function useCancelRental() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      rentalId,
+      clothingIds,
+    }: {
+      rentalId: string;
+      clothingIds: string[];
+    }) => {
+      // Atualizar o aluguel para "cancelled"
+      const updatedRental = await rentalsService.update(rentalId, {
+        status: "cancelled",
+      });
+
+      // Atualizar status das roupas para "available"
+      await Promise.all(
+        clothingIds.map((clothingId) =>
+          clothesService.update(clothingId, { status: "available" })
+        )
+      );
+
+      return updatedRental;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["clothes"] });
+      toast("Aluguel cancelado!", {
+        description: "O aluguel foi cancelado com sucesso.",
+      });
+    },
+    onError: (error) => {
+      toast("Erro ao cancelar aluguel", {
+        description: "Tente novamente mais tarde.",
+      });
+      console.error("Erro ao cancelar aluguel:", error);
+    },
   });
 }

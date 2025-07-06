@@ -16,7 +16,7 @@ import {
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { ModeToggle } from "../components/atoms/mode-toggle";
 import { useAuth } from "../contexts/use-auth";
-import { useToast } from "../hooks/use-toast";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -30,7 +30,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const { user, login } = useAuth();
-  const { toast } = useToast();
 
   const {
     register,
@@ -51,8 +50,7 @@ export default function LoginPage() {
     try {
       const success = await login(data.email, data.password);
       if (success) {
-        toast({
-          title: "Login realizado com sucesso!",
+        toast.success("Login realizado com sucesso!", {
           description: "Bem-vindo ao sistema.",
         });
       } else {
