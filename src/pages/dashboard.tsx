@@ -7,6 +7,13 @@ import {
 } from "../components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "../components/ui/chart";
+import {
   Shirt,
   Users,
   ShoppingCart,
@@ -21,8 +28,6 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
@@ -49,28 +54,44 @@ export default function Dashboard() {
 
   // Dados para gráficos
   const clothingStatusData = [
-    { name: "Disponível", value: availableClothes, color: "#10b981" },
-    { name: "Alugada", value: rentedClothes, color: "#3b82f6" },
+    {
+      name: "Disponível",
+      value: availableClothes,
+      fill: "var(--color-available)",
+    },
+    { name: "Alugada", value: rentedClothes, fill: "var(--color-rented)" },
     {
       name: "Lavando",
       value: clothes.filter((c) => c.status === "washing").length,
-      color: "#f59e0b",
+      fill: "var(--color-washing)",
     },
     {
       name: "Danificada",
       value: clothes.filter((c) => c.status === "damaged").length,
-      color: "#ef4444",
+      fill: "var(--color-damaged)",
     },
   ].filter((item) => item.value > 0);
 
   const monthlyData = [
-    { month: "Jan", rentals: 12, revenue: 2400 },
-    { month: "Fev", rentals: 19, revenue: 3800 },
-    { month: "Mar", rentals: 15, revenue: 3000 },
-    { month: "Abr", rentals: 22, revenue: 4400 },
-    { month: "Mai", rentals: 18, revenue: 3600 },
-    { month: "Jun", rentals: 25, revenue: 5000 },
+    { month: "Janeiro", rentals: 12, revenue: 2400 },
+    { month: "Fevereiro", rentals: 19, revenue: 3800 },
+    { month: "Março", rentals: 15, revenue: 3000 },
+    { month: "Abril", rentals: 22, revenue: 4400 },
+    { month: "Maio", rentals: 18, revenue: 3600 },
+    { month: "Junho", rentals: 25, revenue: 5000 },
   ];
+
+  // Configuração para o ChartContainer do shadcn
+  const chartConfig = {
+    rentals: {
+      label: "Aluguéis",
+      color: "#3b82f6",
+    },
+    available: { label: "Disponível", color: "#10b981" },
+    rented: { label: "Alugada", color: "#3b82f6" },
+    washing: { label: "Lavando", color: "#f59e0b" },
+    damaged: { label: "Danificada", color: "#ef4444" },
+  };
 
   return (
     <div className="space-y-6">
@@ -168,28 +189,38 @@ export default function Dashboard() {
             <CardTitle>Status das Roupas</CardTitle>
             <CardDescription>Distribuição atual do estoque</CardDescription>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="flex items-center justify-center">
+            <ChartContainer
+              config={chartConfig}
+              className="mx-auto aspect-square h-[300px]"
+            >
               <PieChart>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
                 <Pie
                   data={clothingStatusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                  }
-                  outerRadius={80}
-                  fill="#8884d8"
                   dataKey="value"
+                  nameKey="name"
+                  innerRadius={60}
+                  strokeWidth={5}
                 >
                   {clothingStatusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <ChartLegend
+                  content={
+                    <ChartLegendContent
+                      nameKey="name"
+                      payload={clothingStatusData}
+                    />
+                  }
+                  className="-translate-y-[2px] "
+                />
               </PieChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -199,15 +230,37 @@ export default function Dashboard() {
             <CardDescription>Histórico dos últimos 6 meses</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="rentals" fill="#3b82f6" />
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <BarChart
+                accessibilityLayer
+                data={monthlyData}
+                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+              >
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey="month"
+                  tickLine={false}
+                  tickMargin={20}
+                  axisLine={false}
+                />
+                <YAxis
+                  tickLine={false}
+                  tickMargin={20}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}`}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent />}
+                />
+                <Bar
+                  dataKey="rentals"
+                  fill="var(--color-rentals)"
+                  radius={8}
+                  maxBarSize={60}
+                />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>

@@ -66,10 +66,47 @@ export function useUpdateRental() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateRentalData }) =>
-      rentalsService.update(id, data),
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: UpdateRentalData;
+    }) => {
+      // 1. Buscar o aluguel original para comparar as roupas
+      const originalRental = await rentalsService.getById(id);
+      const originalClothingIds = originalRental.clothingIds;
+      const newClothingIds = data.clothingIds || [];
+
+      // 2. Identificar roupas adicionadas e removidas
+      const addedIds = newClothingIds.filter(
+        (id) => !originalClothingIds.includes(id)
+      );
+      const removedIds = originalClothingIds.filter(
+        (id) => !newClothingIds.includes(id)
+      );
+
+      // 3. Atualizar o status das roupas
+      // Roupas removidas voltam a ficar "disponíveis"
+      await Promise.all(
+        removedIds.map((clothingId) =>
+          clothesService.update(clothingId, { status: "available" })
+        )
+      );
+      // Roupas adicionadas ficam "alugadas"
+      await Promise.all(
+        addedIds.map((clothingId) =>
+          clothesService.update(clothingId, { status: "rented" })
+        )
+      );
+
+      // 4. Atualizar o aluguel em si
+      return rentalsService.update(id, data);
+    },
     onSuccess: () => {
+      // 5. Invalidar os caches para atualizar a UI
       queryClient.invalidateQueries({ queryKey: ["rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["clothes"] });
       toast("Aluguel atualizado!", {
         description: "As informações foram salvas com sucesso.",
       });

@@ -18,7 +18,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Notificações */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-4 w-4" />
             <Badge
@@ -29,7 +28,6 @@ export default function Header({ title, subtitle }: HeaderProps) {
             </Badge>
           </Button>
 
-          {/* Toggle tema */}
           <ModeToggle />
         </div>
       </div>

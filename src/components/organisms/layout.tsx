@@ -1,5 +1,4 @@
 import type React from "react";
-
 import { useState } from "react";
 import { Button } from "../ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
@@ -34,7 +33,8 @@ export default function Layout({ children }: LayoutProps) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-64">
-            <Sidebar onNavigate={() => setSidebarOpen(false)} />
+            {/* Adicionamos a prop 'isMobile' aqui */}
+            <Sidebar isMobile onNavigate={() => setSidebarOpen(false)} />
           </SheetContent>
         </Sheet>
 

@@ -22,7 +22,7 @@
       "type": "vestido",
       "size": "M",
       "color": "Azul",
-      "status": "rented",
+      "status": "available",
       "price": 150,
       "notes": "Vestido elegante para festas",
       "createdAt": "2024-01-01T10:00:00Z",
@@ -34,11 +34,11 @@
       "type": "terno",
       "size": "G",
       "color": "Preto",
-      "status": "available",
+      "status": "rented",
       "price": 200,
       "notes": "Terno social completo",
       "createdAt": "2024-01-01T10:00:00Z",
-      "updatedAt": "2025-07-06T12:59:16.260Z"
+      "updatedAt": "2025-07-07T14:24:10.254Z"
     },
     {
       "id": "3",
@@ -50,7 +50,7 @@
       "price": 100,
       "notes": "Fantasia infantil completa",
       "createdAt": "2024-01-01T10:00:00Z",
-      "updatedAt": "2025-07-06T13:28:26.557Z"
+      "updatedAt": "2025-07-07T14:25:24.374Z"
     },
     {
       "id": "d296",
@@ -62,7 +62,7 @@
       "status": "rented",
       "notes": "Nova",
       "createdAt": "2025-07-06T12:07:28.994Z",
-      "updatedAt": "2025-07-06T13:33:43.905Z"
+      "updatedAt": "2025-07-07T14:09:35.969Z"
     }
   ],
   "customers": [
@@ -102,32 +102,48 @@
   ],
   "rentals": [
     {
-      "id": "c101",
+      "id": "4c21",
       "customerId": "1",
-      "clothingIds": [
-        "1"
-      ],
-      "rentDate": "2025-07-06",
-      "returnDate": "2025-07-13",
-      "notes": "",
-      "totalValue": 150,
-      "status": "active",
-      "createdAt": "2025-07-06T13:29:21.128Z",
-      "updatedAt": "2025-07-06T13:29:21.128Z"
-    },
-    {
-      "id": "4df7",
-      "customerId": "2",
       "clothingIds": [
         "d296"
       ],
       "rentDate": "2025-07-01",
-      "returnDate": "2025-07-04",
-      "notes": "",
+      "returnDate": "2025-07-05",
+      "notes": "Festa de Formatura",
       "totalValue": 25.9,
       "status": "active",
-      "createdAt": "2025-07-06T13:33:43.888Z",
-      "updatedAt": "2025-07-06T13:33:43.888Z"
+      "createdAt": "2025-07-07T14:09:35.916Z",
+      "updatedAt": "2025-07-07T14:10:08.970Z"
+    },
+    {
+      "id": "0e0b",
+      "customerId": "2",
+      "clothingIds": [
+        "2"
+      ],
+      "rentDate": "2025-07-07",
+      "returnDate": "2025-07-16",
+      "notes": "Casamento",
+      "totalValue": 200,
+      "status": "active",
+      "createdAt": "2025-07-07T14:24:10.205Z",
+      "updatedAt": "2025-07-07T14:24:10.205Z"
+    },
+    {
+      "id": "cb23",
+      "customerId": "3",
+      "clothingIds": [
+        "3"
+      ],
+      "rentDate": "2025-07-08",
+      "returnDate": "2025-07-10",
+      "notes": "Festa a Fantasia",
+      "totalValue": 100,
+      "status": "returned",
+      "createdAt": "2025-07-07T14:25:07.526Z",
+      "updatedAt": "2025-07-07T14:25:24.357Z",
+      "actualReturnDate": "2025-07-07",
+      "fine": 0
     }
   ]
 }
