@@ -651,7 +651,6 @@ export default function CalendarPage() {
         </CardContent>
       </Card>
 
-      {/* CORREÇÃO: Legenda completa e corrigida */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Legenda dos Eventos</CardTitle>
