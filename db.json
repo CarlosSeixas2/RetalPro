@@ -98,15 +98,24 @@
       "notes": "Aluga frequentemente para eventos corporativos",
       "createdAt": "2024-01-01T10:00:00Z",
       "updatedAt": "2024-01-01T10:00:00Z"
+    },
+    {
+      "id": "4",
+      "name": "Carlos Pereira",
+      "cpf": "321.654.987-00",
+      "phone": "(11) 66666-6666",
+      "email": "carlos@email.com",
+      "address": "Rua do Comércio, 321, Centro, São Paulo - SP",
+      "notes": "Cliente frequente, sempre aluga smoking",
+      "createdAt": "2024-01-01T10:00:00Z",
+      "updatedAt": "2024-01-01T10:00:00Z"
     }
   ],
   "rentals": [
     {
       "id": "4c21",
       "customerId": "1",
-      "clothingIds": [
-        "d296"
-      ],
+      "clothingIds": ["d296"],
       "rentDate": "2025-07-01",
       "returnDate": "2025-07-05",
       "notes": "Festa de Formatura",
@@ -118,9 +127,7 @@
     {
       "id": "0e0b",
       "customerId": "2",
-      "clothingIds": [
-        "2"
-      ],
+      "clothingIds": ["2"],
       "rentDate": "2025-07-07",
       "returnDate": "2025-07-16",
       "notes": "Casamento",
@@ -132,9 +139,7 @@
     {
       "id": "cb23",
       "customerId": "3",
-      "clothingIds": [
-        "3"
-      ],
+      "clothingIds": ["3"],
       "rentDate": "2025-07-08",
       "returnDate": "2025-07-10",
       "notes": "Festa a Fantasia",
