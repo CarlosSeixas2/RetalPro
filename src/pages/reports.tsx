@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -37,7 +37,22 @@ export default function ReportsPage() {
 
   const { rentals, customers, clothes } = useData();
 
-  const filteredRentals = rentals.filter((rental) => {
+  const processedRentals = useMemo(() => {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0); // Normaliza a data atual para comparação
+
+    return rentals.map((rental) => {
+      const returnDate = new Date(rental.returnDate);
+      const isOverdue = rental.status === "active" && returnDate < today;
+
+      if (isOverdue) {
+        return { ...rental, status: "overdue" as const };
+      }
+      return rental;
+    });
+  }, [rentals]);
+
+  const filteredRentals = processedRentals.filter((rental) => {
     const matchesDateFrom = !dateFrom || rental.rentDate >= dateFrom;
     const matchesDateTo = !dateTo || rental.rentDate <= dateTo;
     const matchesStatus =
@@ -85,7 +100,7 @@ export default function ReportsPage() {
         Valor: rental.totalValue,
         Multa: rental.fine || 0,
         Total: rental.totalValue + (rental.fine || 0),
-        Roupas: details.clothes.map((c) => c?.name).join("; "),
+        Roupas: details.clothes.map((c: any) => c?.name).join("; "),
       };
     });
 
