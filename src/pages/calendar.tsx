@@ -54,6 +54,7 @@ import {
 import { useCustomers } from "../hooks/use-customers";
 import { useClothes, useAvailableClothes } from "../hooks/use-clothes";
 import type { Rental } from "../services/rentals";
+import Header from "../components/molecules/header";
 
 const rentalSchema = z.object({
   customerId: z.string().min(1, "Cliente é obrigatório"),
@@ -269,14 +270,10 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Calendário de Aluguéis</h1>
-          <p className="text-muted-foreground">
-            Visualize e gerencie todos os aluguéis no calendário
-          </p>
-        </div>
-      </div>
+      <Header
+        title="Calendário de Aluguéis"
+        subtitle="Visualize e gerencie todos os aluguéis no calendário"
+      />
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>

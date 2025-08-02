@@ -20,24 +20,42 @@ import {
   LogOut,
   Calendar,
   BadgeCheck,
+  ChevronDown,
+  Plus,
+  List,
+  Package,
 } from "lucide-react";
 import { useAuth } from "../../contexts/use-auth";
 import { useState } from "react";
 
 interface SidebarProps {
   onNavigate?: () => void;
-  isMobile?: boolean; // <-- Nova propriedade
+  isMobile?: boolean;
 }
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+
   { name: "Roupas", href: "/clothes", icon: Shirt },
+  { name: "Estoque", href: "/stock", icon: Package },
+
   { name: "Clientes", href: "/customers", icon: Users },
-  { name: "Calendário", href: "/calendar", icon: Calendar },
-  { name: "Novo Aluguel", href: "/rentals", icon: ShoppingCart },
+
+  {
+    name: "Aluguel",
+    icon: ShoppingCart,
+    children: [
+      { name: "Novo Aluguel", href: "/rentals", icon: Plus },
+      { name: "Aluguéis Ativos", href: "/active-rentals", icon: List },
+    ]
+  },
+
   { name: "Devoluções", href: "/returns", icon: RotateCcw },
+
+  { name: "Calendário", href: "/calendar", icon: Calendar },
   { name: "Relatórios", href: "/reports", icon: FileText },
 ];
+
 
 export default function Sidebar({
   onNavigate,
@@ -47,24 +65,114 @@ export default function Sidebar({
   const { user, logout } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   const handleLogout = () => {
     logout();
     onNavigate?.();
   };
 
-  // Se for mobile, está sempre expandido. Senão, depende do hover ou do menu.
   const isExpanded = isMobile || isHovered || isMenuOpen;
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups(prev => 
+      prev.includes(groupName) 
+        ? prev.filter(name => name !== groupName)
+        : [...prev, groupName]
+    );
+  };
+
+  const isGroupExpanded = (groupName: string) => {
+    return expandedGroups.includes(groupName);
+  };
+
+  const renderNavigationItem = (item: any, level = 0) => {
+    const isActive = location.pathname === item.href;
+    const hasChildren = item.children && item.children.length > 0;
+    const isGroup = hasChildren;
+    const groupExpanded = isGroup ? isGroupExpanded(item.name) : false;
+    
+    const hasActiveChild = isGroup && item.children.some((child: any) => 
+      location.pathname === child.href
+    );
+
+    if (isGroup) {
+      return (
+        <div key={item.name} className="space-y-1">
+          <button
+            onClick={() => toggleGroup(item.name)}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300 w-full",
+              hasActiveChild
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            <item.icon className="h-5 w-5 shrink-0" />
+            <span
+              className={cn(
+                "transition-all duration-500 ease-in-out flex-1 text-left",
+                isExpanded
+                  ? "opacity-100 ml-1"
+                  : "opacity-0 w-0 overflow-hidden"
+              )}
+            >
+              {item.name}
+            </span>
+            {isExpanded && (
+              <ChevronDown 
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-200",
+                  groupExpanded ? "rotate-180" : ""
+                )} 
+              />
+            )}
+          </button>
+          
+          {isExpanded && groupExpanded && (
+            <div className="ml-4 space-y-1">
+              {item.children.map((child: any) => renderNavigationItem(child, level + 1))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        key={item.name}
+        to={item.href}
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
+          level > 0 && "ml-4",
+          isActive
+            ? "bg-primary text-primary-foreground"
+            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+        )}
+      >
+        <item.icon className="h-5 w-5 shrink-0" />
+        <span
+          className={cn(
+            "transition-all duration-500 ease-in-out",
+            isExpanded
+              ? "opacity-100 ml-1"
+              : "opacity-0 w-0 overflow-hidden"
+          )}
+        >
+          {item.name}
+        </span>
+      </Link>
+    );
+  };
 
   return (
     <div
       className={cn(
         "relative flex h-full flex-col bg-card border-r border-border",
         "transition-all duration-500 ease-in-out",
-        // A lógica de largura já funciona, pois `isExpanded` será sempre `true` no mobile
         isExpanded ? "w-64" : "w-16"
       )}
-      // Desativa os eventos de mouse se for a versão mobile
       onMouseEnter={isMobile ? undefined : () => setIsHovered(true)}
       onMouseLeave={
         isMobile
@@ -98,34 +206,7 @@ export default function Sidebar({
       {/* Navigation Area */}
       <ScrollArea className="flex-1 px-2 py-4">
         <nav className="space-y-2">
-          {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-300",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <item.icon className="h-5 w-5 shrink-0" />
-                <span
-                  className={cn(
-                    "transition-all duration-500 ease-in-out",
-                    isExpanded
-                      ? "opacity-100 ml-1"
-                      : "opacity-0 w-0 overflow-hidden"
-                  )}
-                >
-                  {item.name}
-                </span>
-              </Link>
-            );
-          })}
+          {navigation.map((item) => renderNavigationItem(item))}
         </nav>
       </ScrollArea>
 

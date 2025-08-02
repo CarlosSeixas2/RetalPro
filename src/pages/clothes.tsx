@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
@@ -56,18 +55,9 @@ import {
   useDeleteClothing,
 } from "../hooks/use-clothes";
 import type { Clothing } from "../services/clothes";
-
-const clothingSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  type: z.string().min(1, "Tipo é obrigatório"),
-  size: z.string().min(1, "Tamanho é obrigatório"),
-  color: z.string().min(1, "Cor é obrigatória"),
-  price: z.number().min(0, "Preço deve ser positivo"),
-  status: z.enum(["available", "rented", "washing", "damaged"]),
-  notes: z.string().optional(),
-});
-
-type ClothingForm = z.infer<typeof clothingSchema>;
+import type { ClothingForm } from "../types/types";
+import { clothingSchema } from "../validators/validators";
+import Header from "../components/molecules/header";
 
 const clothingTypes = [
   "vestido",
@@ -79,6 +69,7 @@ const clothingTypes = [
   "acessorio",
   "sapato",
 ];
+
 const sizes = ["PP", "P", "M", "G", "GG", "XG"];
 
 const statusMap = {
@@ -197,189 +188,10 @@ export default function ClothesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Gerenciar Roupas</h1>
-          <p className="text-muted-foreground">
-            Cadastre e gerencie o estoque de roupas
-          </p>
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingClothing(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Roupa
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingClothing ? "Editar Roupa" : "Nova Roupa"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingClothing
-                  ? "Atualize as informações da roupa"
-                  : "Adicione uma nova roupa ao estoque"}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ex: Vestido de Festa Azul"
-                    {...register("name")}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo</Label>
-                  <Select
-                    onValueChange={(value) => setValue("type", value)}
-                    value={watch("type")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clothingTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type.charAt(0).toUpperCase() +
-                            type.slice(1).replace("-", " ")}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.type && (
-                    <p className="text-sm text-destructive">
-                      {errors.type.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="size">Tamanho</Label>
-                  <Select
-                    onValueChange={(value) => setValue("size", value)}
-                    value={watch("size")}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Tamanho" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sizes.map((size) => (
-                        <SelectItem key={size} value={size}>
-                          {size}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.size && (
-                    <p className="text-sm text-destructive">
-                      {errors.size.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="color">Cor</Label>
-                  <Input
-                    id="color"
-                    placeholder="Ex: Azul"
-                    {...register("color")}
-                  />
-                  {errors.color && (
-                    <p className="text-sm text-destructive">
-                      {errors.color.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="price">Preço (R$)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    {...register("price", { valueAsNumber: true })}
-                  />
-                  {errors.price && (
-                    <p className="text-sm text-destructive">
-                      {errors.price.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  onValueChange={(value: any) => setValue("status", value)}
-                  value={watch("status")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Status da roupa" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="available">Disponível</SelectItem>
-                    <SelectItem value="rented">Alugada</SelectItem>
-                    <SelectItem value="washing">Lavando</SelectItem>
-                    <SelectItem value="damaged">Danificada</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.status && (
-                  <p className="text-sm text-destructive">
-                    {errors.status.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Observações adicionais..."
-                  {...register("notes")}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCloseDialog}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={
-                    createClothingMutation.isPending ||
-                    updateClothingMutation.isPending
-                  }
-                >
-                  {(createClothingMutation.isPending ||
-                    updateClothingMutation.isPending) && (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  )}
-                  {editingClothing ? "Atualizar" : "Cadastrar"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <Header
+        title="Gerenciar Roupas"
+        subtitle="Cadastre e gerencie o estoque de roupas"
+      />
 
       <Card>
         <CardHeader>
@@ -435,7 +247,185 @@ export default function ClothesPage() {
         <CardHeader>
           <CardTitle>Estoque de Roupas ({filteredClothes.length})</CardTitle>
           <CardDescription>
-            Lista de todas as roupas cadastradas
+            <div className="flex items-start justify-between">
+              <p>Lista de todas as roupas cadastradas</p>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => setEditingClothing(null)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Roupa
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingClothing ? "Editar Roupa" : "Nova Roupa"}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingClothing
+                        ? "Atualize as informações da roupa"
+                        : "Adicione uma nova roupa ao estoque"}
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nome</Label>
+                        <Input
+                          id="name"
+                          placeholder="Ex: Vestido de Festa Azul"
+                          {...register("name")}
+                        />
+                        {errors.name && (
+                          <p className="text-sm text-destructive">
+                            {errors.name.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="type">Tipo</Label>
+                        <Select
+                          onValueChange={(value) => setValue("type", value)}
+                          value={watch("type")}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clothingTypes.map((type) => (
+                              <SelectItem key={type} value={type}>
+                                {type.charAt(0).toUpperCase() +
+                                  type.slice(1).replace("-", " ")}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.type && (
+                          <p className="text-sm text-destructive">
+                            {errors.type.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="size">Tamanho</Label>
+                        <Select
+                          onValueChange={(value) => setValue("size", value)}
+                          value={watch("size")}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Tamanho" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {sizes.map((size) => (
+                              <SelectItem key={size} value={size}>
+                                {size}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {errors.size && (
+                          <p className="text-sm text-destructive">
+                            {errors.size.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="color">Cor</Label>
+                        <Input
+                          id="color"
+                          placeholder="Ex: Azul"
+                          {...register("color")}
+                        />
+                        {errors.color && (
+                          <p className="text-sm text-destructive">
+                            {errors.color.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="price">Preço (R$)</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...register("price", { valueAsNumber: true })}
+                        />
+                        {errors.price && (
+                          <p className="text-sm text-destructive">
+                            {errors.price.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select
+                        onValueChange={(value: any) =>
+                          setValue("status", value)
+                        }
+                        value={watch("status")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Status da roupa" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="available">Disponível</SelectItem>
+                          <SelectItem value="rented">Alugada</SelectItem>
+                          <SelectItem value="washing">Lavando</SelectItem>
+                          <SelectItem value="damaged">Danificada</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.status && (
+                        <p className="text-sm text-destructive">
+                          {errors.status.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">Observações</Label>
+                      <Textarea
+                        id="notes"
+                        placeholder="Observações adicionais..."
+                        {...register("notes")}
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleCloseDialog}
+                      >
+                        Cancelar
+                      </Button>
+                      <Button
+                        type="submit"
+                        disabled={
+                          createClothingMutation.isPending ||
+                          updateClothingMutation.isPending
+                        }
+                      >
+                        {(createClothingMutation.isPending ||
+                          updateClothingMutation.isPending) && (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        )}
+                        {editingClothing ? "Atualizar" : "Cadastrar"}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -452,7 +442,7 @@ export default function ClothesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredClothes.map((clothing) => (
+              {filteredClothes.map((clothing: Clothing) => (
                 <TableRow key={clothing.id}>
                   <TableCell className="font-medium">{clothing.name}</TableCell>
                   <TableCell className="capitalize">

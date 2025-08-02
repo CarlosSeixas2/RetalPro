@@ -37,7 +37,8 @@ import {
 } from "lucide-react";
 import { useData } from "../contexts/data-context";
 import { toast } from "sonner";
-import type { Clothing } from "../types/models";
+import type { Clothing } from "../types/types";
+import Header from "../components/molecules/header";
 
 export default function ReturnsPage() {
   const [selectedRental, setSelectedRental] = useState<any>(null);
@@ -96,15 +97,10 @@ export default function ReturnsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Devoluções</h1>
-          <p className="text-muted-foreground">
-            Gerencie as devoluções de roupas alugadas
-          </p>
-        </div>
-      </div>
+      <Header
+        title="Devoluções"
+        subtitle="Gerencie as devoluções de roupas alugadas"
+      />
 
       {/* Estatísticas Rápidas */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -223,7 +219,7 @@ export default function ReturnsPage() {
                             </p>
                             <p className="text-sm text-muted-foreground">
                               {details.clothes
-                                .map((c) => c?.name)
+                                .map((c: any) => c?.name)
                                 .join(", ")
                                 .substring(0, 30)}
                               {details.clothes.length > 1 && "..."}

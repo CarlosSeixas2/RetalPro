@@ -115,7 +115,9 @@
     {
       "id": "4c21",
       "customerId": "1",
-      "clothingIds": ["d296"],
+      "clothingIds": [
+        "d296"
+      ],
       "rentDate": "2025-07-01",
       "returnDate": "2025-07-05",
       "notes": "Festa de Formatura",
@@ -127,7 +129,9 @@
     {
       "id": "0e0b",
       "customerId": "2",
-      "clothingIds": ["2"],
+      "clothingIds": [
+        "2"
+      ],
       "rentDate": "2025-07-07",
       "returnDate": "2025-07-16",
       "notes": "Casamento",
@@ -139,7 +143,9 @@
     {
       "id": "cb23",
       "customerId": "3",
-      "clothingIds": ["3"],
+      "clothingIds": [
+        "3"
+      ],
       "rentDate": "2025-07-08",
       "returnDate": "2025-07-10",
       "notes": "Festa a Fantasia",

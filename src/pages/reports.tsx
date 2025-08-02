@@ -25,21 +25,43 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { Badge } from "../components/ui/badge";
-import { Download, FileText, Calendar, Filter } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../components/ui/command";
+import { Download, FileText, Calendar, Filter, ChevronsUpDown, Check } from "lucide-react";
 import { useData } from "../contexts/data-context";
-import { toast } from "sonner";
+import { useToast } from "../hooks/use-toast";
+import { SearchInput } from "../components/molecules/search-input";
+import { Pagination } from "../components/molecules/pagination";
+import { ExportManager } from "../utils/export";
+import { useTableFilters } from "../hooks/use-table-filters";
+import { RENTAL_STATUS } from "../constants";
+import Header from "../components/molecules/header";
+import { cn } from "../lib/utils";
 
 export default function ReportsPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [customerFilter, setCustomerFilter] = useState("all");
+  const [customerComboboxOpen, setCustomerComboboxOpen] = useState(false);
 
   const { rentals, customers, clothes } = useData();
+  const { showSuccess, showError } = useToast();
 
   const processedRentals = useMemo(() => {
     const today = new Date();
-    today.setUTCHours(0, 0, 0, 0); // Normaliza a data atual para comparação
+    today.setUTCHours(0, 0, 0, 0);
 
     return rentals.map((rental) => {
       const returnDate = new Date(rental.returnDate);
@@ -63,6 +85,22 @@ export default function ReportsPage() {
     return matchesDateFrom && matchesDateTo && matchesStatus && matchesCustomer;
   });
 
+  // Usar o hook de filtros para busca e paginação
+  const {
+    search,
+    setSearch,
+    paginatedData: paginatedRentals,
+    page,
+    setPage,
+    totalItems,
+    totalPages,
+    itemsPerPage,
+  } = useTableFilters({
+    data: filteredRentals,
+    searchFields: ["id"],
+    defaultItemsPerPage: 10,
+  });
+
   const getRentalDetails = (rental: any) => {
     const customer = customers.find((c) => c.id === rental.customerId);
     const rentalClothes = rental.clothingIds
@@ -79,49 +117,86 @@ export default function ReportsPage() {
   };
 
   const exportToPDF = () => {
-    toast("Exportando relatório...", {
-      description: "O relatório em PDF será baixado em breve.",
-    });
-    // Aqui seria implementada a lógica de exportação para PDF
+    try {
+      const exportData = filteredRentals.map((rental) => {
+        const details = getRentalDetails(rental);
+        return {
+          ID: rental.id.slice(-6),
+          Cliente: details.customer?.name || "",
+          CPF: details.customer?.cpf || "",
+          "Data Retirada": ExportManager.formatDate(rental.rentDate),
+          "Data Devolução": ExportManager.formatDate(rental.returnDate),
+          "Data Devolução Real": rental.actualReturnDate 
+            ? ExportManager.formatDate(rental.actualReturnDate)
+            : "",
+          Status: getStatusLabel(rental.status),
+          Valor: ExportManager.formatCurrency(rental.totalValue),
+          Multa: ExportManager.formatCurrency(rental.fine || 0),
+          Total: ExportManager.formatCurrency(rental.totalValue + (rental.fine || 0)),
+          Roupas: details.clothes.map((c: any) => c?.name).join("; "),
+        };
+      });
+
+      ExportManager.exportToPDF({
+        data: exportData,
+        filename: "relatorio-alugueis",
+        title: "Relatório de Aluguéis",
+      });
+
+      showSuccess("Relatório exportado!", {
+        description: "O arquivo PDF foi baixado com sucesso.",
+      });
+    } catch (error) {
+      showError("Erro ao exportar PDF", {
+        description: "Tente novamente mais tarde.",
+      });
+    }
   };
 
   const exportToCSV = () => {
-    const csvData = filteredRentals.map((rental) => {
-      const details = getRentalDetails(rental);
-      return {
-        ID: rental.id,
-        Cliente: details.customer?.name || "",
-        CPF: details.customer?.cpf || "",
-        Telefone: details.customer?.phone || "",
-        "Data Retirada": rental.rentDate,
-        "Data Devolução": rental.returnDate,
-        "Data Devolução Real": rental.actualReturnDate || "",
-        Status: rental.status,
-        Valor: rental.totalValue,
-        Multa: rental.fine || 0,
-        Total: rental.totalValue + (rental.fine || 0),
-        Roupas: details.clothes.map((c: any) => c?.name).join("; "),
-      };
-    });
+    try {
+      const exportData = filteredRentals.map((rental) => {
+        const details = getRentalDetails(rental);
+        return {
+          ID: rental.id.slice(-6),
+          Cliente: details.customer?.name || "",
+          CPF: details.customer?.cpf || "",
+          Telefone: details.customer?.phone || "",
+          "Data Retirada": ExportManager.formatDate(rental.rentDate),
+          "Data Devolução": ExportManager.formatDate(rental.returnDate),
+          "Data Devolução Real": rental.actualReturnDate 
+            ? ExportManager.formatDate(rental.actualReturnDate)
+            : "",
+          Status: getStatusLabel(rental.status),
+          Valor: ExportManager.formatCurrency(rental.totalValue),
+          Multa: ExportManager.formatCurrency(rental.fine || 0),
+          Total: ExportManager.formatCurrency(rental.totalValue + (rental.fine || 0)),
+          Roupas: details.clothes.map((c: any) => c?.name).join("; "),
+        };
+      });
 
-    const csvContent = [
-      Object.keys(csvData[0] || {}).join(","),
-      ...csvData.map((row) => Object.values(row).join(",")),
-    ].join("\n");
+      ExportManager.exportToCSV({
+        data: exportData,
+        filename: "relatorio-alugueis",
+      });
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `relatorio-alugueis-${
-      new Date().toISOString().split("T")[0]
-    }.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      showSuccess("Relatório exportado!", {
+        description: "O arquivo CSV foi baixado com sucesso.",
+      });
+    } catch (error) {
+      showError("Erro ao exportar CSV", {
+        description: "Tente novamente mais tarde.",
+      });
+    }
+  };
 
-    toast("Relatório exportado!", {
-      description: "O arquivo CSV foi baixado com sucesso.",
-    });
+  const getStatusLabel = (status: string) => {
+    const statusMap = {
+      active: "Ativo",
+      returned: "Devolvido",
+      overdue: "Atrasado",
+    };
+    return statusMap[status as keyof typeof statusMap] || status;
   };
 
   const statusMap = {
@@ -130,17 +205,16 @@ export default function ReportsPage() {
     overdue: { label: "Atrasado", variant: "destructive" as const },
   };
 
+  // Obter cliente selecionado
+  const selectedCustomer = customers.find((c) => c.id === customerFilter);
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Relatórios</h1>
-          <p className="text-muted-foreground">
-            Visualize e exporte relatórios de aluguéis
-          </p>
-        </div>
-      </div>
+      <Header
+        title="Relatórios"
+        subtitle="Visualize e exporte relatórios de aluguéis"
+      />
+      
 
       {/* Filtros */}
       <Card>
@@ -183,28 +257,82 @@ export default function ReportsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos os Status</SelectItem>
-                  <SelectItem value="active">Ativo</SelectItem>
-                  <SelectItem value="returned">Devolvido</SelectItem>
-                  <SelectItem value="overdue">Atrasado</SelectItem>
+                  <SelectItem value={RENTAL_STATUS.ACTIVE}>Ativo</SelectItem>
+                  <SelectItem value={RENTAL_STATUS.RETURNED}>Devolvido</SelectItem>
+                  <SelectItem value={RENTAL_STATUS.OVERDUE}>Atrasado</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label>Cliente</Label>
-              <Select value={customerFilter} onValueChange={setCustomerFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os clientes" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos os Clientes</SelectItem>
-                  {customers.map((customer) => (
-                    <SelectItem key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={customerComboboxOpen} onOpenChange={setCustomerComboboxOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={customerComboboxOpen}
+                    className="w-full justify-between"
+                  >
+                    {customerFilter !== "all"
+                      ? customers.find((customer) => customer.id === customerFilter)?.name
+                      : "Todos os clientes..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar cliente..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum cliente encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setCustomerFilter("all");
+                            setCustomerComboboxOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              customerFilter === "all"
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          Todos os Clientes
+                        </CommandItem>
+                        {customers.map((customer) => (
+                          <CommandItem
+                            key={customer.id}
+                            value={customer.name}
+                            onSelect={() => {
+                              setCustomerFilter(customer.id);
+                              setCustomerComboboxOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                customerFilter === customer.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
+                              )}
+                            />
+                            <div className="flex flex-col">
+                              <span>{customer.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {customer.cpf}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardContent>
@@ -266,43 +394,35 @@ export default function ReportsPage() {
         </Card>
       </div>
 
-      {/* Ações de Exportação */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Exportar Relatório</CardTitle>
-          <CardDescription>
-            Baixe o relatório nos formatos disponíveis
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <Button onClick={exportToPDF} variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Exportar PDF
-            </Button>
-            <Button onClick={exportToCSV}>
-              <Download className="h-4 w-4 mr-2" />
-              Exportar CSV
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Tabela de Dados */}
       <Card>
         <CardHeader>
-          <CardTitle>
-            Histórico de Aluguéis ({filteredRentals.length})
-          </CardTitle>
-          <CardDescription>
-            Lista detalhada de todos os aluguéis filtrados
-          </CardDescription>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>
+                Histórico de Aluguéis ({totalItems})
+              </CardTitle>
+              <CardDescription>
+                Lista detalhada de todos os aluguéis filtrados
+              </CardDescription>
+            </div>
+
+            <div className="flex gap-2">
+              <Button onClick={exportToPDF} variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                PDF
+              </Button>
+              <Button onClick={exportToCSV} size="sm">
+                <Download className="h-4 w-4 mr-2" />
+                CSV
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Data Retirada</TableHead>
                 <TableHead>Data Devolução</TableHead>
@@ -313,15 +433,12 @@ export default function ReportsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredRentals.map((rental) => {
+              {paginatedRentals.map((rental) => {
                 const details = getRentalDetails(rental);
                 const total = rental.totalValue + (rental.fine || 0);
 
                 return (
                   <TableRow key={rental.id}>
-                    <TableCell className="font-mono text-sm">
-                      #{rental.id.slice(-6)}
-                    </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{details.customer?.name}</p>
@@ -380,11 +497,22 @@ export default function ReportsPage() {
             </TableBody>
           </Table>
 
-          {filteredRentals.length === 0 && (
+          {paginatedRentals.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               Nenhum aluguel encontrado com os filtros aplicados.
             </div>
           )}
+
+          {/* Paginação */}
+          <div className="mt-6">
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

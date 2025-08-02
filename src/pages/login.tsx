@@ -29,6 +29,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
   const { user, login } = useAuth();
 
   const {
@@ -49,6 +50,7 @@ export default function LoginPage() {
 
     try {
       const success = await login(data.email, data.password);
+
       if (success) {
         toast.success("Login realizado com sucesso!", {
           description: "Bem-vindo ao sistema.",
@@ -57,6 +59,7 @@ export default function LoginPage() {
         setError("Email ou senha incorretos");
       }
     } catch (err) {
+      console.error("Erro ao fazer login:", err);
       setError("Erro ao fazer login. Tente novamente.");
     } finally {
       setIsLoading(false);
@@ -72,9 +75,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">RentalPro</CardTitle>
-          <CardDescription>
-            Sistema de Gerenciamento de Aluguel de Roupas
-          </CardDescription>
+          <CardDescription>Gerenciando o Aluguel da sua Loja</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

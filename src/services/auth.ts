@@ -21,7 +21,6 @@ export interface LoginResponse {
 export const authService = {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
     try {
-      // Buscar usuário por email
       const response = await api.get<User[]>(
         `/users?email=${credentials.email}`
       );

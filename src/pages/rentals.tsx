@@ -40,7 +40,10 @@ import {
 } from "lucide-react";
 import { useData } from "../contexts/data-context";
 import { cn } from "../lib/utils";
-import { toast } from "sonner";
+import { useToast } from "../hooks/use-toast";
+import { SearchInput } from "../components/molecules/search-input";
+import { Pagination } from "../components/molecules/pagination";
+import Header from "../components/molecules/header";
 
 const rentalSchema = z.object({
   customerId: z.string().min(1, "Cliente é obrigatório"),
@@ -56,8 +59,12 @@ export default function RentalsPage() {
   const [selectedClothes, setSelectedClothes] = useState<string[]>([]);
   const [totalValue, setTotalValue] = useState(0);
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [clothingSearch, setClothingSearch] = useState("");
+  const [currentClothingPage, setCurrentClothingPage] = useState(1);
+  const itemsPerClothingPage = 6;
 
   const { customers, clothes, addRental } = useData();
+  const { showSuccess, showError } = useToast();
 
   const {
     register,
@@ -79,6 +86,20 @@ export default function RentalsPage() {
   const availableClothes = clothes.filter(
     (clothing) => clothing.status === "available"
   );
+
+  // Filtrar roupas por busca
+  const filteredClothes = availableClothes.filter(clothing =>
+    clothing.name.toLowerCase().includes(clothingSearch.toLowerCase()) ||
+    clothing.type.toLowerCase().includes(clothingSearch.toLowerCase()) ||
+    clothing.color.toLowerCase().includes(clothingSearch.toLowerCase())
+  );
+
+  // Paginar roupas
+  const startIndex = (currentClothingPage - 1) * itemsPerClothingPage;
+  const endIndex = startIndex + itemsPerClothingPage;
+  const paginatedClothes = filteredClothes.slice(startIndex, endIndex);
+  const totalClothingPages = Math.ceil(filteredClothes.length / itemsPerClothingPage);
+
   const selectedCustomerId = watch("customerId");
   const selectedCustomer = customers.find((c) => c.id === selectedCustomerId);
 
@@ -112,7 +133,7 @@ export default function RentalsPage() {
     try {
       addRental(rental);
 
-      toast("Aluguel registrado!", {
+      showSuccess("Aluguel registrado!", {
         description: `Aluguel para ${selectedCustomer?.name} foi criado com sucesso.`,
       });
 
@@ -127,9 +148,11 @@ export default function RentalsPage() {
       });
       setSelectedClothes([]);
       setTotalValue(0);
+      setClothingSearch("");
+      setCurrentClothingPage(1);
     } catch (error) {
       console.error("Falha ao registrar aluguel:", error);
-      toast("Erro ao registrar!", {
+      showError("Erro ao registrar!", {
         description:
           "Não foi possível criar o aluguel. Por favor, tente novamente.",
       });
@@ -138,14 +161,10 @@ export default function RentalsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Novo Aluguel</h1>
-          <p className="text-muted-foreground">
-            Registre um novo aluguel de roupas
-          </p>
-        </div>
-      </div>
+      <Header
+        title="Novo Aluguel"
+        subtitle="Registre um novo aluguel de roupas"
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-2">
@@ -295,51 +314,76 @@ export default function RentalsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Busca de Roupas */}
+            <div className="mb-4">
+              <SearchInput
+                value={clothingSearch}
+                onChange={setClothingSearch}
+                placeholder="Buscar roupas por nome, tipo ou cor..."
+                className="max-w-md"
+              />
+            </div>
+
             {availableClothes.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 Nenhuma roupa disponível para aluguel no momento.
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {availableClothes.map((clothing) => (
-                  <div
-                    key={clothing.id}
-                    className={`border rounded-lg p-4 transition-colors ${
-                      selectedClothes.includes(clothing.id)
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={selectedClothes.includes(clothing.id)}
-                        onCheckedChange={(checked) =>
-                          handleClothingToggle(clothing.id, Boolean(checked))
-                        }
-                      />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium truncate">
-                          {clothing.name}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {clothing.type.replace("-", " ")}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            {clothing.size}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            {clothing.color}
-                          </span>
+              <>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {paginatedClothes.map((clothing) => (
+                    <div
+                      key={clothing.id}
+                      className={`border rounded-lg p-4 transition-colors ${
+                        selectedClothes.includes(clothing.id)
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={selectedClothes.includes(clothing.id)}
+                          onCheckedChange={(checked) =>
+                            handleClothingToggle(clothing.id, Boolean(checked))
+                          }
+                        />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium truncate">
+                            {clothing.name}
+                          </h4>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-xs">
+                              {clothing.type.replace("-", " ")}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {clothing.size}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              {clothing.color}
+                            </span>
+                          </div>
+                          <p className="text-sm font-medium text-green-600 mt-2">
+                            R$ {clothing.price.toFixed(2)}
+                          </p>
                         </div>
-                        <p className="text-sm font-medium text-green-600 mt-2">
-                          R$ {clothing.price.toFixed(2)}
-                        </p>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                {/* Paginação das Roupas */}
+                {totalClothingPages > 1 && (
+                  <div className="mt-6">
+                    <Pagination
+                      currentPage={currentClothingPage}
+                      totalPages={totalClothingPages}
+                      onPageChange={setCurrentClothingPage}
+                      totalItems={filteredClothes.length}
+                      itemsPerPage={itemsPerClothingPage}
+                    />
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
             {errors.clothingIds && (
               <p className="text-sm text-destructive mt-2">
@@ -403,6 +447,8 @@ export default function RentalsPage() {
               reset();
               setSelectedClothes([]);
               setTotalValue(0);
+              setClothingSearch("");
+              setCurrentClothingPage(1);
             }}
           >
             Limpar

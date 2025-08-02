@@ -37,14 +37,18 @@ import Header from "../components/molecules/header";
 export default function Dashboard() {
   const { clothes, customers, rentals } = useData();
 
-  // Calcular KPIs
+  // Roupas Disponíveis
   const availableClothes = clothes.filter(
     (c) => c.status === "available"
   ).length;
+
+  // Roupas Alugadas
   const rentedClothes = clothes.filter((c) => c.status === "rented").length;
+
+  // Alugueis Ativos
   const activeRentals = rentals.filter((r) => r.status === "active").length;
 
-  // Calcular aluguéis atrasados
+  // Alugueis Atrasados
   const overdueRentals = rentals.filter((rental) => {
     if (rental.status !== "active") return false;
     const today = new Date();
@@ -72,6 +76,7 @@ export default function Dashboard() {
     },
   ].filter((item) => item.value > 0);
 
+  // Dados mensais para aluguéis
   const monthlyData = [
     { month: "Janeiro", rentals: 12, revenue: 2400 },
     { month: "Fevereiro", rentals: 19, revenue: 3800 },
@@ -86,6 +91,10 @@ export default function Dashboard() {
     rentals: {
       label: "Aluguéis",
       color: "#3b82f6",
+    },
+    revenue: {
+      label: "Receita",
+      color: "#4caf50",
     },
     available: { label: "Disponível", color: "#10b981" },
     rented: { label: "Alugada", color: "#3b82f6" },

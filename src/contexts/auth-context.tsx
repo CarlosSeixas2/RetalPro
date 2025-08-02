@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useContext } from "react";
 import { authService, type User } from "../services/auth";
+import { StorageManager } from "../utils/storage";
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,23 +17,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const isAuthenticated = !!user;
+
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const storedToken = localStorage.getItem("rental-token");
-        if (storedToken) {
+        const storedToken = StorageManager.getToken();
+        const storedUser = StorageManager.getUser();
+
+        if (storedToken && storedUser) {
           const validatedUser = await authService.validateToken(storedToken);
+
           if (validatedUser) {
             setUser(validatedUser);
           } else {
-            localStorage.removeItem("rental-token");
-            localStorage.removeItem("rental-user");
+            StorageManager.clearAuth();
           }
         }
       } catch (error) {
         console.error("Erro ao validar token:", error);
-        localStorage.removeItem("rental-token");
-        localStorage.removeItem("rental-user");
+        StorageManager.clearAuth();
       } finally {
         setIsLoading(false);
       }
@@ -46,9 +51,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email,
         password,
       });
+
       setUser(userData);
-      localStorage.setItem("rental-user", JSON.stringify(userData));
-      localStorage.setItem("rental-token", token);
+
+      // Salvar dados no localStorage
+      StorageManager.setToken(token);
+      StorageManager.setUser({
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role || "user",
+      });
+
       return true;
     } catch (error) {
       console.error("Erro no login:", error);
@@ -58,15 +72,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("rental-user");
-    localStorage.removeItem("rental-token");
+    StorageManager.clearAuth();
+  };
+
+  const value: AuthContextType = {
+    user,
+    login,
+    logout,
+    isLoading,
+    isAuthenticated,
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
+}
+
+// Hook personalizado para usar o contexto de autenticação
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth deve ser usado dentro de um AuthProvider");
+  }
+  return context;
 }
 
 export { AuthContext };

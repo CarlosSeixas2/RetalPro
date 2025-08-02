@@ -43,7 +43,8 @@ import {
 import { Plus, Edit, Trash2, Search, History } from "lucide-react";
 import { useData } from "../contexts/data-context";
 import { toast } from "sonner";
-import type { Customer } from "../types/models";
+import type { Customer } from "../types/types";
+import Header from "../components/molecules/header";
 
 const customerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
@@ -152,134 +153,10 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 pb-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Gerenciar Clientes</h1>
-          <p className="text-muted-foreground">
-            Cadastre e gerencie informações dos clientes
-          </p>
-        </div>
-
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingCustomer(null)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Cliente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCustomer ? "Editar Cliente" : "Novo Cliente"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingCustomer
-                  ? "Atualize as informações do cliente"
-                  : "Adicione um novo cliente ao sistema"}
-              </DialogDescription>
-            </DialogHeader>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo</Label>
-                  <Input
-                    id="name"
-                    placeholder="Ex: Maria Silva"
-                    {...register("name")}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-destructive">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input
-                    id="cpf"
-                    placeholder="000.000.000-00"
-                    {...register("cpf")}
-                  />
-                  {errors.cpf && (
-                    <p className="text-sm text-destructive">
-                      {errors.cpf.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    placeholder="(11) 99999-9999"
-                    {...register("phone")}
-                  />
-                  {errors.phone && (
-                    <p className="text-sm text-destructive">
-                      {errors.phone.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="cliente@email.com"
-                    {...register("email")}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-destructive">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address">Endereço</Label>
-                <Input
-                  id="address"
-                  placeholder="Rua, número, bairro, cidade"
-                  {...register("address")}
-                />
-                {errors.address && (
-                  <p className="text-sm text-destructive">
-                    {errors.address.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes">Observações</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Observações adicionais sobre o cliente..."
-                  {...register("notes")}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCloseDialog}
-                >
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {editingCustomer ? "Atualizar" : "Cadastrar"}
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+      <Header
+        title="Gerenciar Clientes"
+        subtitle="Cadastre e gerencie informações dos clientes"
+      />
 
       {/* Search */}
       <Card>
@@ -301,13 +178,136 @@ export default function CustomersPage() {
 
       {/* Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>
-            Clientes Cadastrados ({filteredCustomers.length})
-          </CardTitle>
-          <CardDescription>
-            Lista de todos os clientes do sistema
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle>
+              Clientes Cadastrados ({filteredCustomers.length})
+            </CardTitle>
+            <CardDescription>
+              Lista de todos os clientes do sistema
+            </CardDescription>
+          </div>
+
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setEditingCustomer(null)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Novo Cliente
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingCustomer ? "Editar Cliente" : "Novo Cliente"}
+                </DialogTitle>
+                <DialogDescription>
+                  {editingCustomer
+                    ? "Atualize as informações do cliente"
+                    : "Adicione um novo cliente ao sistema"}
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nome Completo</Label>
+                    <Input
+                      id="name"
+                      placeholder="Ex: Maria Silva"
+                      {...register("name")}
+                    />
+                    {errors.name && (
+                      <p className="text-sm text-destructive">
+                        {errors.name.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input
+                      id="cpf"
+                      placeholder="000.000.000-00"
+                      {...register("cpf")}
+                    />
+                    {errors.cpf && (
+                      <p className="text-sm text-destructive">
+                        {errors.cpf.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Telefone</Label>
+                    <Input
+                      id="phone"
+                      placeholder="(11) 99999-9999"
+                      {...register("phone")}
+                    />
+                    {errors.phone && (
+                      <p className="text-sm text-destructive">
+                        {errors.phone.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="cliente@email.com"
+                      {...register("email")}
+                    />
+                    {errors.email && (
+                      <p className="text-sm text-destructive">
+                        {errors.email.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input
+                    id="address"
+                    placeholder="Rua, número, bairro, cidade"
+                    {...register("address")}
+                  />
+                  {errors.address && (
+                    <p className="text-sm text-destructive">
+                      {errors.address.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Observações</Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Observações adicionais sobre o cliente..."
+                    {...register("notes")}
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseDialog}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit">
+                    {editingCustomer ? "Atualizar" : "Cadastrar"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </CardHeader>
         <CardContent>
           <Table>
